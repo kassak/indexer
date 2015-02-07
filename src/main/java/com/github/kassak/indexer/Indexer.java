@@ -15,7 +15,7 @@ public class Indexer implements AutoCloseable {
         this.tf = tf;
         this.vf = vf;
         try {
-            fsWatcher = new FSWatcher();
+            fsWatcher = new FSWatcher(new FSProcessor(new IndexManager()));
         } catch (IOException e) {
             throw new IndexerException(e);
         } catch (UnsupportedOperationException e) {
