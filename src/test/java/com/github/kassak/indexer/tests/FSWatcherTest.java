@@ -224,4 +224,22 @@ public class FSWatcherTest {
         watcherThread.interrupt();
         watcherThread.join();
     }
+
+    @Test
+    public void errors() throws IOException, InterruptedException {
+        Collector c = new Collector();
+        IFSWatcher watcher = new FSWatcher(c);
+        Thread watcherThread = new Thread(watcher);
+        watcherThread.start();
+
+        Path unexisting = Files.createTempDirectory("test-");
+        Files.delete(unexisting);
+        watcher.registerRoot(unexisting);
+
+        Assert.assertTrue(c.files.isEmpty());
+        Assert.assertTrue(c.dirs.isEmpty());
+
+        watcherThread.interrupt();
+        watcherThread.join();
+    }
 }

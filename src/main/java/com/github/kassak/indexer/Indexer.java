@@ -11,11 +11,11 @@ public class Indexer implements AutoCloseable {
         }
     }
 
-    Indexer(ITokenizerFactory tf, IVocabularyFactory vf) throws IndexerException {
+    Indexer(ITokenizerFactory tf, IVocabularyFactory vf, int queueSize, int fileThreads, int fileQueueSize) throws IndexerException {
         this.tf = tf;
         this.vf = vf;
         try {
-            fsWatcher = new FSWatcher(new FSProcessor(new IndexManager()));
+            fsWatcher = new FSWatcher(new FSProcessor(new IndexManager(tf, queueSize, fileThreads, fileQueueSize)));
         } catch (IOException e) {
             throw new IndexerException(e);
         } catch (UnsupportedOperationException e) {

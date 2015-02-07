@@ -1,5 +1,8 @@
 package com.github.kassak.indexer;
 
+import java.io.FileNotFoundException;
+import java.nio.file.Path;
+import java.util.Collection;
 import java.util.List;
 
 public interface IIndexManager extends Runnable {
@@ -21,10 +24,18 @@ public interface IIndexManager extends Runnable {
         private final boolean valid;
     }
 
-    List<FileEntry> filesByWord(String word);
+    public List<FileEntry> filesByWord(String word);
 
-    void processFile(String file);
-    void removeFileFromIndex(String file);
-    void addWordToIndex(String file, String word);
+    public void addWordToIndex(Path file, String word);
+    public void removeFromIndex(Path file);
+    public void submitFinishedProcessing(Path file, long stamp, boolean valid);
 
+    public ITokenizer newTokenizer(Path file) throws FileNotFoundException;
+
+    public void syncFile(Path file);
+    public void syncDirectory(Path file);
+    public void removeFile(Path file);
+    public void removeDirectory(Path file);
+
+    public Collection<String> getFiles() ;
 }
