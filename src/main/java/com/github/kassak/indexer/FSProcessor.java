@@ -12,8 +12,23 @@ public class FSProcessor implements IFSProcessor {
     }
 
     @Override
-    public void processFile(Path file) {
+    public void onFileRemoved(Path file) {
+
+    }
+
+    @Override
+    public void onFileChanged(Path file) {
         indexManager.processFile(file.toAbsolutePath().toString());
+    }
+
+    @Override
+    public void onDirectoryRemoved(Path file) {
+
+    }
+
+    @Override
+    public void onDirectoryChanged(Path file) {
+
     }
 
     private IIndexManager indexManager;

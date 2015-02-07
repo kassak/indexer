@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -23,115 +24,169 @@ public class FSWatcher implements IFSWatcher {
     }
 
     public void registerRoot(Path path) throws IOException {
-        if(Files.isDirectory(path)) {
-            try {
-                Files.walkFileTree(path, new SimpleFileVisitor<Path>() {
-                    @Override
-                    public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-                        fsProcessor.processFile(file);
-                        return FileVisitResult.CONTINUE;
-                    }
-
-                    @Override
-                    public FileVisitResult visitFileFailed(Path file, IOException exc) throws IOException {
-                        log.log(Level.WARNING, "Failed to visit " + file.toString(), exc);
-                        return FileVisitResult.CONTINUE;
-                    }
-
-                    @Override
-                    public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
-                        String sdir = dir.toAbsolutePath().toString();
-                        if(log.isLoggable(Level.FINE))
-                            log.fine("rigistering " + sdir);
-                        synchronized(watchKeys) {
-                            if(!watchKeys.containsKey(sdir)) {
-                                watchKeys.put(sdir, dir.register(watcher, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY));
-                                watchFilters.put(sdir, new ConcurrentSkipListSet<String>());
+        synchronized (watchKeys) {
+            if (Files.isDirectory(path)) {
+                try {
+                    Files.walkFileTree(path, new SimpleFileVisitor<Path>() {
+                        @Override
+                        public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
+                            if (registerDirectory(dir.toAbsolutePath()))
                                 return FileVisitResult.CONTINUE;
-                            }
-                            else { //drop file filters on directory registration
-                                Set<String> f = watchFilters.get(sdir);
-                                boolean e = f.isEmpty();
-                                f.clear();
-                                return e ? FileVisitResult.SKIP_SUBTREE : FileVisitResult.CONTINUE;
-                            }
+                            return FileVisitResult.SKIP_SUBTREE;
                         }
-                    }
-                });
-            } catch (IOException e) {
-                log.log(Level.WARNING, "Exception while registering " + path, e);
-            }
-        }
-        else {
-            synchronized(watchKeys) {
-                Path dir = path.toAbsolutePath().getParent();
-                String sdir = dir.toString();
-                String fname = path.getFileName().toString();
-                if(!watchKeys.containsKey(dir)) {
-                    watchKeys.put(sdir, dir.register(watcher, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY));
-                    Set<String> s = new ConcurrentSkipListSet<String>();
-                    s.add(fname);
-                    watchFilters.put(sdir, s);
+
+                        @Override
+                        public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                            if (Files.isRegularFile(file))
+                                fsProcessor.onFileChanged(file.toAbsolutePath());
+                            else if (log.isLoggable(Level.FINE))
+                                log.fine("Skipping not a regular file " + file);
+                            return FileVisitResult.CONTINUE;
+                        }
+
+                        @Override
+                        public FileVisitResult visitFileFailed(Path file, IOException exc) throws IOException {
+                            log.log(Level.WARNING, "Failed to visit " + file.toString(), exc);
+                            return FileVisitResult.CONTINUE;
+                        }
+                    });
+                } catch (IOException e) {
+                    log.log(Level.WARNING, "Exception while registering " + path, e);
+                    throw e;
                 }
-                else {
-                    //ignore registration of file in watched dir
-                }
-            }
-            fsProcessor.processFile(path);
+            } else if (Files.isRegularFile(path)) {
+                if (registerFile(path.toAbsolutePath()))
+                    fsProcessor.onFileChanged(path.toAbsolutePath());
+            } else
+                log.warning("Attempt to register not file nor directory " + path);
         }
     }
 
     public void unregisterRoot(Path path) throws IOException {
-        if(Files.isDirectory(path)) {
-            try {
-                Files.walkFileTree(path, new SimpleFileVisitor<Path>() {
-                    @Override
-                    public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
-                        synchronized (watchKeys) {
-                            String sdir = dir.toAbsolutePath().toString();
-                            WatchKey key = watchKeys.get(sdir);
-                            watchKeys.remove(sdir);
-                            watchFilters.remove(sdir);
-                            if (key != null)
-                                key.cancel();
-                        }
-                        return FileVisitResult.CONTINUE;
-                    }
-
-                    @Override
-                    public FileVisitResult visitFileFailed(Path file, IOException exc) throws IOException {
-                        log.log(Level.WARNING, "Failed to visit " + file, exc);
-                        return FileVisitResult.CONTINUE;
-                    }
-                });
-            } catch (IOException e) {
-                log.log(Level.WARNING, "Exception while unregistering " + path, e);
-            }
-        }
-        else {
-            synchronized(watchKeys) {
-                Path dir = path.toAbsolutePath().getParent();
-                String sdir = dir.toString();
-                String fname = path.getFileName().toString();
-                Set<String> s = watchFilters.get(sdir);
-                if(s != null && !s.isEmpty()) {
-                    s.remove(fname);
-                    if(s.isEmpty()) {
-                        WatchKey w = watchKeys.get(sdir);
-                        if(w != null) {
-                            w.cancel();
-                            watchKeys.remove(sdir);
-                        }
-                        watchFilters.remove(sdir);
-                    }
+        synchronized (watchKeys) {
+            if (Files.isDirectory(path)) {
+                if(watchKeys.containsKey(path.toAbsolutePath().getParent().toString())) {
+                    log.warning("Ignoring attempt to unregister subdir of watchewd dir " + path.toAbsolutePath().toString());
+                    return;
                 }
+                try {
+                    Files.walkFileTree(path, new SimpleFileVisitor<Path>() {
+                        @Override
+                        public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
+                            unregisterDirectory(dir.toAbsolutePath());
+                            return FileVisitResult.CONTINUE;
+                        }
+
+                        @Override
+                        public FileVisitResult visitFileFailed(Path file, IOException exc) throws IOException {
+                            log.log(Level.WARNING, "Failed to visit " + file, exc);
+                            return FileVisitResult.CONTINUE;
+                        }
+                    });
+                } catch (IOException e) {
+                    log.log(Level.WARNING, "Exception while unregistering " + path, e);
+                    throw e;
+                } finally {
+                    fsProcessor.onDirectoryRemoved(path);
+                }
+            } else {
+                if (unregisterFile(path))
+                    fsProcessor.onFileRemoved(path.toAbsolutePath());
             }
         }
     }
 
-    boolean filterEvent(Path base, Path rel) {
-        Set<String> s = watchFilters.get(base.toAbsolutePath().toString());
-        return s != null && !s.isEmpty() && !s.contains(rel.getFileName().toString());
+    private boolean registerDirectory(Path dir) throws IOException {
+        String sdir = dir.toString();
+        if(log.isLoggable(Level.FINE))
+            log.fine("rigistering " + sdir);
+        if(!watchKeys.containsKey(sdir)) {
+            watchKeys.put(sdir, dir.register(watcher, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY));
+            watchFilters.put(sdir, new ConcurrentSkipListSet<String>());
+            return true;
+        } else {
+            Set<String> f = watchFilters.get(sdir);
+            if(f.isEmpty())
+                return false;
+            else { //drop file filters on directory registration
+                f.clear();
+                return true;
+            }
+        }
+    }
+
+    private boolean registerFile(Path path) throws IOException {
+        Path dir = path.getParent();
+        String sdir = dir.toString();
+        String fname = path.getFileName().toString();
+        if(log.isLoggable(Level.FINE))
+            log.fine("unrigistering " + path);
+        if(!watchKeys.containsKey(sdir)) {
+            watchKeys.put(sdir, dir.register(watcher, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY));
+            Set<String> s = new ConcurrentSkipListSet<>();
+            s.add(fname);
+            watchFilters.put(sdir, s);
+            return true;
+        }
+        else {
+            Set<String> f = watchFilters.get(sdir);
+            if(f.isEmpty()) {
+                log.warning("Ignoring attempt to watch file in watched directory " + path);
+                return false; //ignore registration of file in watched dir
+            }
+            else {
+                return f.add(fname);
+            }
+        }
+    }
+
+    private boolean unregisterDirectory(Path dir) {
+        String sdir = dir.toString();
+        if(log.isLoggable(Level.FINE))
+            log.fine("unrigistering " + sdir);
+        if(!watchKeys.containsKey(sdir)) {
+            return false;
+        }
+        else { //ignore filters
+            WatchKey w = watchKeys.remove(sdir);
+            if(w.isValid())
+                w.cancel();
+            watchFilters.remove(sdir);
+            return true;
+        }
+    }
+
+    private boolean unregisterFile(Path path) {
+        Path dir = path.getParent();
+        String sdir = dir.toString();
+        String fname = path.getFileName().toString();
+        if(log.isLoggable(Level.FINE))
+            log.fine("unrigistering " + path);
+        if(!watchKeys.containsKey(sdir)) {
+            return false;
+        }
+        else {
+            Set<String> f = watchFilters.get(sdir);
+            if(f.isEmpty()) {
+                log.warning("Ignoring attempt to unwatch file in watched directory " + path);
+                return false; //ignore unregistration of file in watched dir
+            }
+            else {
+                boolean ex = f.remove(fname);
+                if(f.isEmpty()) {
+                    WatchKey w = watchKeys.remove(sdir);
+                    if(w.isValid())
+                        w.cancel();
+                    watchFilters.remove(sdir);
+                }
+                return ex;
+            }
+        }
+    }
+
+    boolean filterEvent(Path path) {
+        Set<String> s = watchFilters.get(path.getParent().toString());
+        return s != null && !s.isEmpty() && !s.contains(path.getFileName().toString());
     }
 
     @Override
@@ -152,20 +207,20 @@ public class FSWatcher implements IFSWatcher {
                     if (kind == OVERFLOW) {
                         processOverflow(base);
                     } else if (kind == ENTRY_CREATE) {
-                        WatchEvent<Path> pe = asPathEvent(event);
-                        if(filterEvent(base, pe.context()))
+                        Path p = base.resolve(asPathEvent(event).context()).toAbsolutePath();
+                        if(filterEvent(p))
                             continue;
-                        processNewEntry(base.resolve(pe.context()));
+                        processNewEntry(p);
                     } else if (kind == ENTRY_DELETE) {
-                        WatchEvent<Path> pe = asPathEvent(event);
-                        if(filterEvent(base, pe.context()))
+                        Path p = base.resolve(asPathEvent(event).context()).toAbsolutePath();
+                        if(filterEvent(p))
                             continue;
-                        processDeleteEntry(base.resolve(pe.context()));
+                        processDeleteEntry(p);
                     } else if (kind == ENTRY_MODIFY) {
-                        WatchEvent<Path> pe = asPathEvent(event);
-                        if(filterEvent(base, pe.context()))
+                        Path p = base.resolve(asPathEvent(event).context()).toAbsolutePath();
+                        if(filterEvent(p))
                             continue;
-                        processModifyEntry(base.resolve(pe.context()));
+                        processModifyEntry(p);
                     } else {
                         log.warning("Unknown event type");
                     }
@@ -173,7 +228,9 @@ public class FSWatcher implements IFSWatcher {
 
                 boolean valid = key.reset();
                 if (!valid) {
-                    processDeleteEntry(base);
+                    synchronized (watchKeys) {
+                        unregisterDirectory(base);
+                    }
                 }
             }
         }
@@ -188,19 +245,29 @@ public class FSWatcher implements IFSWatcher {
 
     private void processOverflow(Path path) {
         log.warning("processOverflow " + path.toString());
-        //TODO: filters
-        if(Files.isDirectory(path)) {
+        synchronized (watchKeys) { //assure parent is still watched
+            if(!watchKeys.containsKey(path.toString())) {
+                if(log.isLoggable(Level.FINE)) {
+                    log.fine("Ignoring overflow on unwatched directory " + path);
+                    return;
+                }
+            }
+            fsProcessor.onDirectoryChanged(path);
+            final Set<String> filter = new HashSet<>(watchFilters.get(path.toString()));
+            final Set<String> files = new HashSet<>();
             try {
                 Files.walkFileTree(path, new SimpleFileVisitor<Path>() {
                     @Override
                     public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
-                        registerRoot(dir);
+                        if(filter.isEmpty())
+                            registerRoot(dir);
                         return FileVisitResult.SKIP_SUBTREE;
                     }
 
                     @Override
                     public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-                        fsProcessor.processFile(file);
+                        if(filter.contains(file.getFileName().toString()))
+                            files.add(file.getFileName().toString());
                         return FileVisitResult.CONTINUE;
                     }
 
@@ -211,11 +278,12 @@ public class FSWatcher implements IFSWatcher {
                     }
                 });
             } catch (IOException e) {
-                log.log(Level.WARNING, "Exception while updating " + path.toString(), e);
+                log.log(Level.WARNING, "Exception while processing overflow " + path, e);
             }
+            filter.removeAll(files);
+            for(String f : filter)
+                unregisterFile(path.resolve(f));
         }
-        else
-            fsProcessor.processFile(path);
     }
 
     private void processNewEntry(Path path) {
@@ -223,26 +291,36 @@ public class FSWatcher implements IFSWatcher {
             log.fine("processNewEntry " + path.toString());
         if(Files.isDirectory(path)) {
             try {
-                registerRoot(path);
+                synchronized (watchKeys) { //assure parent is still watched
+                    if(watchKeys.containsKey(path.getParent().toString()))
+                        registerRoot(path);
+                    else if(log.isLoggable(Level.FINE))
+                        log.fine("Ignoring auto registration of subdirectory or unwatched path " + path);
+                }
             } catch (IOException e) {
                 log.log(Level.WARNING, "Failed to register root", e);
             }
         }
-        else
-            fsProcessor.processFile(path);
+        else if(Files.isRegularFile(path))
+            fsProcessor.onFileChanged(path);
+        else if(log.isLoggable(Level.FINE))
+            log.fine("Ignoring creation of not directory nor file " + path);
     }
 
     private void processDeleteEntry(Path path) {
-        if(log.isLoggable(Level.FINE))
+        if (log.isLoggable(Level.FINE))
             log.fine("processDeleteEntry " + path.toString());
-        //TODO: remove filter
-        fsProcessor.processFile(path);
+        synchronized (watchKeys) {
+            unregisterFile(path);
+        }
+        fsProcessor.onFileRemoved(path);
     }
 
     private void processModifyEntry(Path path) {
         if(log.isLoggable(Level.FINE))
             log.fine("processModifyEntry " + path.toString());
-        fsProcessor.processFile(path);
+        if (Files.isRegularFile(path))
+            fsProcessor.onFileChanged(path);
     }
 
     @SuppressWarnings("unchecked")

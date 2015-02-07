@@ -12,25 +12,63 @@ import java.io.IOException;
 import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.logging.ConsoleHandler;
+import java.util.logging.Handler;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 class Collector implements IFSProcessor {
 
     Collector() {
         files = new ConcurrentSkipListSet<>();
+        dirs = new ConcurrentSkipListSet<>();
     }
 
     @Override
-    public void processFile(Path file) {
-        files.add(file.toAbsolutePath().toString());
+    public void onFileRemoved(Path file) {
+        files.remove(file.toString());
+    }
+
+    @Override
+    public void onFileChanged(Path file) {
+        files.add(file.toString());
+    }
+
+    @Override
+    public void onDirectoryRemoved(Path file) {
+        dirs.remove(file.toString());
+        Iterator<String> it = files.iterator();
+        while(it.hasNext()) {
+            String s = it.next();
+            if (s.startsWith(file.toString()))
+                it.remove();
+        }
+    }
+
+    @Override
+    public void onDirectoryChanged(Path file) {
+        dirs.add(file.toString());
+        Assert.assertTrue(false);
     }
 
     public Set<String> files;
+    public Set<String> dirs;
 }
 
 public class FSWatcherTest {
+    static {
+        final Logger topLogger = Logger.getLogger("");
+        Handler h = new ConsoleHandler();
+        h.setLevel(Level.FINEST);
+        topLogger.setLevel(Level.FINEST);
+        topLogger.addHandler(h);
+    }
+
     void appendToFile(Path file, String s) throws IOException {
         try (Writer w = new FileWriter(file.toString(), true)) {
             w.write(s);
@@ -44,14 +82,16 @@ public class FSWatcherTest {
         Thread watcherThread = new Thread(watcher);
         watcherThread.start();
 
-        Path temp = Files.createTempFile("test-", ".txt");
+        Path temp = Files.createTempFile("test-", ".txt").toAbsolutePath();
         temp.toFile().deleteOnExit();
         Assert.assertTrue(c.files.isEmpty());
+        Assert.assertTrue(c.dirs.isEmpty());
 
         watcher.registerRoot(temp);
 
         Assert.assertEquals(c.files.size(), 1);
-        Assert.assertEquals(c.files.iterator().next(), temp.toAbsolutePath().toString());
+        Assert.assertTrue(c.files.contains(temp.toString()));
+        Assert.assertTrue(c.dirs.isEmpty());
 
         c.files.clear();
 
@@ -59,7 +99,8 @@ public class FSWatcherTest {
         Thread.sleep(1000);
 
         Assert.assertEquals(c.files.size(), 1);
-        Assert.assertEquals(c.files.iterator().next(), temp.toAbsolutePath().toString());
+        Assert.assertTrue(c.files.contains(temp.toString()));
+        Assert.assertTrue(c.dirs.isEmpty());
 
         c.files.clear();
 
@@ -67,29 +108,118 @@ public class FSWatcherTest {
         Thread.sleep(1000);
 
         Assert.assertEquals(c.files.size(), 1);
-        Assert.assertEquals(c.files.iterator().next(), temp.toAbsolutePath().toString());
-
-        c.files.clear();
+        Assert.assertTrue(c.files.contains(temp.toString()));
+        Assert.assertTrue(c.dirs.isEmpty());
 
         watcher.unregisterRoot(temp);
 
         Assert.assertTrue(c.files.isEmpty());
+        Assert.assertTrue(c.dirs.isEmpty());
 
         appendToFile(temp, "blah");
         Thread.sleep(1000);
 
         Assert.assertTrue(c.files.isEmpty());
+        Assert.assertTrue(c.dirs.isEmpty());
 
         watcher.registerRoot(temp);
 
         Assert.assertEquals(c.files.size(), 1);
-        Assert.assertEquals(c.files.iterator().next(), temp.toAbsolutePath().toString());
-
-        c.files.clear();
+        Assert.assertTrue(c.files.contains(temp.toString()));
+        Assert.assertTrue(c.dirs.isEmpty());
 
         Files.delete(temp);
+        Thread.sleep(1000);
+
+        Assert.assertTrue(c.files.isEmpty());
+        Assert.assertTrue(c.dirs.isEmpty());
+
+        watcherThread.interrupt();
+        watcherThread.join();
+    }
+
+    @Test
+    public void directoryRegistering() throws IOException, InterruptedException {
+        Collector c = new Collector();
+        IFSWatcher watcher = new FSWatcher(c);
+        Thread watcherThread = new Thread(watcher);
+        watcherThread.start();
+
+        Path base1 = Files.createTempDirectory("test-");
+        base1.toFile().deleteOnExit();
+
+        Path base2 = Files.createTempDirectory("test-");
+        base2.toFile().deleteOnExit();
+
+        Path subdir11 = base1.resolve("sub1");
+        Path subdir12 = base1.resolve("sub2");
+
+        Path subdir2 = base2.resolve("sub");
+
+        Path file1 = base1.resolve("file1.txt");
+        Path file12 = subdir11.resolve("file2.txt");
+
+        Path file2 = subdir2.resolve("file.txt");
+
+        Assert.assertTrue(c.files.isEmpty());
+        Assert.assertTrue(c.dirs.isEmpty());
+
+        watcher.registerRoot(base2);
+
+        Assert.assertTrue(c.files.isEmpty());
+        Assert.assertTrue(c.dirs.isEmpty());
+
+        Files.createDirectories(subdir2);
+        Thread.sleep(1000);
+
+        Assert.assertTrue(c.files.isEmpty());
+        Assert.assertTrue(c.dirs.isEmpty());
+
+        Files.createFile(file2);
+        Thread.sleep(1000);
 
         Assert.assertEquals(c.files.size(), 1);
+        Assert.assertTrue(c.files.contains(file2.toString()));
+        Assert.assertTrue(c.dirs.isEmpty());
+
+        c.files.clear();
+        appendToFile(file2, "blah");
+        Thread.sleep(1000);
+
+        Assert.assertEquals(c.files.size(), 1);
+        Assert.assertTrue(c.files.contains(file2.toString()));
+        Assert.assertTrue(c.dirs.isEmpty());
+
+        Files.delete(file2);
+        Thread.sleep(1000);
+
+        Assert.assertTrue(c.files.isEmpty());
+        Assert.assertTrue(c.dirs.isEmpty());
+
+        Files.createFile(file2);
+        Thread.sleep(1000);
+
+        Assert.assertEquals(c.files.size(), 1);
+        Assert.assertTrue(c.files.contains(file2.toString()));
+        Assert.assertTrue(c.dirs.isEmpty());
+
+        watcher.unregisterRoot(base2);
+
+        Assert.assertTrue(c.files.isEmpty());
+        Assert.assertTrue(c.dirs.isEmpty());
+
+        appendToFile(file2, "blah");
+        Thread.sleep(1000);
+
+        Assert.assertTrue(c.files.isEmpty());
+        Assert.assertTrue(c.dirs.isEmpty());
+
+        Files.delete(file2);
+        Files.delete(subdir2);
+        Thread.sleep(1000);
+
+        Assert.assertTrue(c.files.isEmpty());
+        Assert.assertTrue(c.dirs.isEmpty());
 
         watcherThread.interrupt();
         watcherThread.join();
