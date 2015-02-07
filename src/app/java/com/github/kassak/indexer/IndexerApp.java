@@ -1,13 +1,28 @@
 package com.github.kassak.indexer;
 
+import com.github.kassak.indexer.storage.FileEntry;
+
+import java.util.Collection;
 import java.util.Scanner;
+import java.util.logging.ConsoleHandler;
+import java.util.logging.Handler;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class IndexerApp {
     public static void main(String[] argv) {
+        Handler handler = new ConsoleHandler();
+        handler.setLevel(Level.OFF);
+        {
+            Logger topLogger = Logger.getLogger("");
+            topLogger.setLevel(Level.FINEST);
+            topLogger.addHandler(handler);
+        }
+
+
         ITokenizerFactory tf = new WhitespaceTokenizerFactory();
-        IVocabularyFactory vf = new CHMVocabularyFactory();
         try(
-            Indexer indexer = new Indexer(tf, vf, 100, 10, 100);
+            Indexer indexer = new Indexer(tf, 100, 10, 100);
             Scanner ins = new Scanner(System.in)
         ) {
             while(true) {
@@ -22,7 +37,9 @@ public class IndexerApp {
                         "?\t--\thelp\n" +
                         "a\t--\tadd file\n" +
                         "r\t--\tremove file\n" +
-                        "s\t--\tsearch"
+                        "s\t--\tsearch\n" +
+                        "l\t--\ttoggle console logging\n" +
+                        "q\t--\tquit\n"
                     );
                 } else if(cmd.equals("a")) {
                     System.out.print("path > ");
@@ -46,11 +63,24 @@ public class IndexerApp {
                     System.out.print("word > ");
                     System.out.flush();
                     try {
-                        indexer.search(ins.nextLine().trim());
+                        Collection<FileEntry> res = indexer.search(ins.nextLine().trim());
+                        System.out.println("--------begin---------");
+                        for(FileEntry fe : res) {
+                            System.out.print(fe.isValid() ? " " : "*");
+                            System.out.println(fe.getPath());
+                        }
+                        System.out.println("---------end----------");
 
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
+                } else if(cmd.equals("q")) {
+                    break;
+                } else if(cmd.equals("l")) {
+                    handler.setLevel(handler.getLevel() == Level.ALL ? Level.OFF : Level.ALL);
+                }
+                else {
+                    System.out.println("Unknown command. Try `?`");
                 }
 
             }

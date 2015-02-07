@@ -36,18 +36,24 @@ public class FileProcessorUnit implements Runnable {
             } catch (Exception e) {
                 log.log(Level.WARNING, "Failed to close " + file, e);
             }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
         } finally {
-            submitFinished(stamp, finished);
+            try {
+                submitFinished(stamp, finished);
+            } catch (InterruptedException e) {
+                log.warning("Interrupted while submitting result " + file);
+            }
         }
     }
 
-    private void submitFinished(long stamp, boolean finished) {
+    private void submitFinished(long stamp, boolean finished) throws InterruptedException {
         if(log.isLoggable(Level.FINE))
             log.fine("Processing finished " + file + " with " + finished);
         indexManager.submitFinishedProcessing(file, stamp, finished);
     }
 
-    private void submitWord(String word) {
+    private void submitWord(String word) throws InterruptedException {
         if(log.isLoggable(Level.FINEST))
             log.finest("Submitting word " + file + " : " + word);
         indexManager.addWordToIndex(file, word);

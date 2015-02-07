@@ -1,7 +1,10 @@
 package com.github.kassak.indexer;
 
+import com.github.kassak.indexer.storage.FileEntry;
+
 import java.io.IOException;
 import java.nio.file.FileSystems;
+import java.util.Collection;
 import java.util.Iterator;
 
 public class Indexer implements AutoCloseable {
@@ -11,16 +14,18 @@ public class Indexer implements AutoCloseable {
         }
     }
 
-    Indexer(ITokenizerFactory tf, IVocabularyFactory vf, int queueSize, int fileThreads, int fileQueueSize) throws IndexerException {
+    Indexer(ITokenizerFactory tf, int queueSize, int fileThreads, int fileQueueSize) throws IndexerException {
         this.tf = tf;
-        this.vf = vf;
         try {
-            fsWatcher = new FSWatcher(new FSProcessor(new IndexManager(tf, queueSize, fileThreads, fileQueueSize)));
+            indexManager = new IndexManager(tf, queueSize, fileThreads, fileQueueSize);
+            fsWatcher = new FSWatcher(new FSProcessor(indexManager));
         } catch (IOException e) {
             throw new IndexerException(e);
         } catch (UnsupportedOperationException e) {
             throw new IndexerException(e);
         }
+        indexManagerThread = new Thread(indexManager);
+        indexManagerThread.start();
         fsWatcherThread = new Thread(fsWatcher);
         fsWatcherThread.start();
     }
@@ -33,8 +38,8 @@ public class Indexer implements AutoCloseable {
         fsWatcher.unregisterRoot(FileSystems.getDefault().getPath(path));
     }
 
-    Iterator<String> search(String word) {
-        return null;
+    Collection<FileEntry> search(String word) {
+        return indexManager.search(word);
     }
 
     public void close() throws Exception {
@@ -42,9 +47,9 @@ public class Indexer implements AutoCloseable {
         fsWatcherThread.join();
     }
 
-    private FSWatcher fsWatcher;
-    private Thread fsWatcherThread;
-    private IVocabulary<WordData> index;
-    private ITokenizerFactory tf;
-    private IVocabularyFactory vf;
+    private final FSWatcher fsWatcher;
+    private final Thread fsWatcherThread;
+    private final ITokenizerFactory tf;
+    private final IIndexManager indexManager;
+    private final Thread indexManagerThread;
 }

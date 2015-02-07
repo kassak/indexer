@@ -1,15 +1,15 @@
 package com.github.kassak.indexer;
 
+import com.github.kassak.indexer.storage.FileEntry;
+import com.github.kassak.indexer.storage.IndexProcessor;
+
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.List;
-import java.util.Queue;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.logging.Logger;
 
 public class IndexManager implements IIndexManager {
     private static class IndexTask {
@@ -45,28 +45,28 @@ public class IndexManager implements IIndexManager {
     public IndexManager(ITokenizerFactory tf, int queueSize, int fileThreads, int fileQueueSize) {
         tasks = new ArrayBlockingQueue<IndexTask>(queueSize);
         filesProcessor = new FilesProcessor(this, fileThreads, fileQueueSize);
-        processor = new IndexProcessor(filesProcessor);
+        processor = new IndexProcessor(this);
         tokenizerFactory = tf;
     }
 
     @Override
-    public List<FileEntry> filesByWord(String word) {
-        return null;
+    public Collection<FileEntry> search(String word) {
+        return processor.search(word);
     }
 
     @Override
-    public void addWordToIndex(Path file, String word) {
-        tasks.add(new IndexTask(IndexTask.ADD_WORD, file, word));
+    public void addWordToIndex(Path file, String word) throws InterruptedException {
+        tasks.put(new IndexTask(IndexTask.ADD_WORD, file, word));
     }
 
     @Override
-    public void removeFromIndex(Path file) {
-        tasks.add(new IndexTask(IndexTask.REMOVE_WORDS, file, null));
+    public void removeFromIndex(Path file) throws InterruptedException {
+        tasks.put(new IndexTask(IndexTask.REMOVE_WORDS, file, null));
     }
 
     @Override
-    public void submitFinishedProcessing(Path file, long stamp, boolean valid) {
-        tasks.add(new IndexTask(valid ? IndexTask.FILE_FINISHED_OK : IndexTask.FILE_FINISHED_FAIL, file, stamp, null));
+    public void submitFinishedProcessing(Path file, long stamp, boolean valid) throws InterruptedException {
+        tasks.put(new IndexTask(valid ? IndexTask.FILE_FINISHED_OK : IndexTask.FILE_FINISHED_FAIL, file, stamp, null));
     }
 
     @Override
@@ -75,28 +75,33 @@ public class IndexManager implements IIndexManager {
     }
 
     @Override
-    public void syncFile(Path file) {
-        tasks.add(new IndexTask(IndexTask.SYNC_FILE, file, null));
+    public void syncFile(Path file) throws InterruptedException {
+        tasks.put(new IndexTask(IndexTask.SYNC_FILE, file, null));
     }
 
     @Override
-    public void syncDirectory(Path file) {
-        tasks.add(new IndexTask(IndexTask.SYNC_DIR, file, null));
+    public void syncDirectory(Path file) throws InterruptedException {
+        tasks.put(new IndexTask(IndexTask.SYNC_DIR, file, null));
     }
 
     @Override
-    public void removeFile(Path file) {
-        tasks.add(new IndexTask(IndexTask.DEL_FILE, file, null));
+    public void removeFile(Path file) throws InterruptedException {
+        tasks.put(new IndexTask(IndexTask.DEL_FILE, file, null));
     }
 
     @Override
-    public void removeDirectory(Path file) {
-        tasks.add(new IndexTask(IndexTask.DEL_DIR, file, null));
+    public void removeDirectory(Path file) throws InterruptedException {
+        tasks.put(new IndexTask(IndexTask.DEL_DIR, file, null));
     }
 
     @Override
     public Collection<String> getFiles() {
         return processor.getFiles();
+    }
+
+    @Override
+    public void processFile(Path file) throws InterruptedException {
+        filesProcessor.processFile(file);
     }
 
     @Override

@@ -12,16 +12,16 @@ public class FilesProcessor {
         indexManager = im;
     }
 
-    void processFile(Path f) throws InterruptedException {
+    public void processFile(Path f) throws InterruptedException {
         Runnable r = new FileProcessorUnit(indexManager, f);
         executor.execute(r);
     }
 
-    void shutdown() {
+    public void shutdown() {
         executor.shutdown();
     }
 
-    void awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
+    public void awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
         executor.awaitTermination(timeout, unit);
     }
 

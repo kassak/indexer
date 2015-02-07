@@ -3,10 +3,7 @@ package com.github.kassak.indexer;
 import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentSkipListSet;
@@ -38,7 +35,13 @@ public class FSWatcher implements IFSWatcher {
                         @Override
                         public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
                             if (Files.isRegularFile(file))
-                                fsProcessor.onFileChanged(file.toAbsolutePath());
+                                try {
+                                    fsProcessor.onFileChanged(file.toAbsolutePath());
+                                } catch (InterruptedException e) {
+                                    log.warning("Interrupted while reporting change " + file);
+                                    Thread.currentThread().interrupt();
+                                    return  FileVisitResult.SKIP_SIBLINGS;
+                                }
                             else if (log.isLoggable(Level.FINE))
                                 log.fine("Skipping not a regular file " + file);
                             return FileVisitResult.CONTINUE;
@@ -56,7 +59,13 @@ public class FSWatcher implements IFSWatcher {
                 }
             } else if (Files.isRegularFile(path)) {
                 if (registerFile(path.toAbsolutePath()))
-                    fsProcessor.onFileChanged(path.toAbsolutePath());
+                    try {
+                        fsProcessor.onFileChanged(path.toAbsolutePath());
+                    } catch (InterruptedException e) {
+                        log.warning("Interrupted while reporting change " + path);
+                        Thread.currentThread().interrupt();
+                        return;
+                    }
             } else
                 log.warning("Attempt to register not file nor directory " + path);
         }
@@ -87,11 +96,22 @@ public class FSWatcher implements IFSWatcher {
                     log.log(Level.WARNING, "Exception while unregistering " + path, e);
                     throw e;
                 } finally {
-                    fsProcessor.onDirectoryRemoved(path);
+                    try {
+                        fsProcessor.onDirectoryRemoved(path);
+                    } catch (InterruptedException e) {
+                        log.warning("Interrupted while unwatching dir " + path);
+                        Thread.currentThread().interrupt();
+                        return;
+                    }
                 }
             } else {
                 if (unregisterFile(path))
-                    fsProcessor.onFileRemoved(path.toAbsolutePath());
+                    try {
+                        fsProcessor.onFileRemoved(path.toAbsolutePath());
+                    } catch (InterruptedException e) {
+                        log.warning("Interrupted while unwatching file " + path);
+                        Thread.currentThread().interrupt();
+                    }
             }
         }
     }
@@ -102,7 +122,7 @@ public class FSWatcher implements IFSWatcher {
             log.fine("rigistering " + sdir);
         if(!watchKeys.containsKey(sdir)) {
             watchKeys.put(sdir, dir.register(watcher, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY));
-            watchFilters.put(sdir, new ConcurrentSkipListSet<String>());
+            watchFilters.put(sdir, Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>()));
             return true;
         } else {
             Set<String> f = watchFilters.get(sdir);
@@ -252,7 +272,13 @@ public class FSWatcher implements IFSWatcher {
                     return;
                 }
             }
-            fsProcessor.onDirectoryChanged(path);
+            try {
+                fsProcessor.onDirectoryChanged(path);
+            } catch (InterruptedException e) {
+                log.warning("Interrupted while reporting overflow " + path);
+                Thread.currentThread().interrupt();
+                return;
+            }
             final Set<String> filter = new HashSet<>(watchFilters.get(path.toString()));
             final Set<String> files = new HashSet<>();
             try {
@@ -302,7 +328,13 @@ public class FSWatcher implements IFSWatcher {
             }
         }
         else if(Files.isRegularFile(path))
-            fsProcessor.onFileChanged(path);
+            try {
+                fsProcessor.onFileChanged(path);
+            } catch (InterruptedException e) {
+                log.warning("Interrupted while reporting change " + path);
+                Thread.currentThread().interrupt();
+                return;
+            }
         else if(log.isLoggable(Level.FINE))
             log.fine("Ignoring creation of not directory nor file " + path);
     }
@@ -313,14 +345,26 @@ public class FSWatcher implements IFSWatcher {
         synchronized (watchKeys) {
             unregisterFile(path);
         }
-        fsProcessor.onFileRemoved(path);
+        try {
+            fsProcessor.onFileRemoved(path);
+        } catch (InterruptedException e) {
+            log.warning("Interrupted while reporting remove " + path);
+            Thread.currentThread().interrupt();
+            return;
+        }
     }
 
     private void processModifyEntry(Path path) {
         if(log.isLoggable(Level.FINE))
             log.fine("processModifyEntry " + path.toString());
         if (Files.isRegularFile(path))
-            fsProcessor.onFileChanged(path);
+            try {
+                fsProcessor.onFileChanged(path);
+            } catch (InterruptedException e) {
+                log.warning("Interrupted while reporting change " + path);
+                Thread.currentThread().interrupt();
+                return;
+            }
     }
 
     @SuppressWarnings("unchecked")
