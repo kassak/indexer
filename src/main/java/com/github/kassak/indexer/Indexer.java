@@ -29,6 +29,10 @@ public class Indexer implements AutoCloseable {
         fsWatcher.registerRoot(FileSystems.getDefault().getPath(path));
     }
 
+    void remove(String path) throws IOException {
+        fsWatcher.unregisterRoot(FileSystems.getDefault().getPath(path));
+    }
+
     Iterator<String> search(String word) {
         return null;
     }
