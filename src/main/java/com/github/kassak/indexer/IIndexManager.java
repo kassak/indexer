@@ -2,12 +2,13 @@ package com.github.kassak.indexer;
 
 import com.github.kassak.indexer.storage.FileEntry;
 import com.github.kassak.indexer.tokenizing.ITokenizer;
+import com.github.kassak.indexer.utils.IService;
 
 import java.io.FileNotFoundException;
 import java.nio.file.Path;
 import java.util.Collection;
 
-public interface IIndexManager extends Runnable {
+public interface IIndexManager extends IService {
 
     public Collection<FileEntry> search(String word);
 

@@ -33,6 +33,10 @@ public class BlockingExecutor {
         return executor.awaitTermination(timeout, unit);
     }
 
+    public boolean isShutdown() {
+        return executor.isShutdown();
+    }
+
     private final ExecutorService executor;
     private final Semaphore semaphore;
 }

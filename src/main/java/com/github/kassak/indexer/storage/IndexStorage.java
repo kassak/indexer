@@ -6,10 +6,12 @@ import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
-import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+/**
+ * Concurrent SWMR bidirectional mapping between files & words
+ */
 public class IndexStorage {
     static class IndexedWordWrapper {
         public IndexedWordWrapper(IndexedWord wrapped) {

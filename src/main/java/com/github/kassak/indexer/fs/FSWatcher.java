@@ -1,6 +1,7 @@
 package com.github.kassak.indexer.fs;
 
 import com.github.kassak.indexer.utils.InterruptibleCallable;
+import com.github.kassak.indexer.utils.ThreadService;
 import com.github.kassak.indexer.utils.Uninterruptible;
 
 import java.io.IOException;
@@ -14,7 +15,7 @@ import java.util.logging.Logger;
 
 import static java.nio.file.StandardWatchEventKinds.*;
 
-public class FSWatcher implements IFSWatcher {
+public class FSWatcher extends ThreadService implements IFSWatcher {
     public FSWatcher(IFSProcessor fsProcessor) throws UnsupportedOperationException, IOException {
         watcher = FileSystems.getDefault().newWatchService();
         this.fsProcessor = fsProcessor;

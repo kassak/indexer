@@ -2,12 +2,14 @@ package com.github.kassak.indexer;
 
 import com.github.kassak.indexer.fs.FSProcessor;
 import com.github.kassak.indexer.fs.FSWatcher;
+import com.github.kassak.indexer.fs.IFSWatcher;
 import com.github.kassak.indexer.storage.FileEntry;
 import com.github.kassak.indexer.tokenizing.ITokenizerFactory;
 
 import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.util.Collection;
+import java.util.concurrent.TimeUnit;
 
 public class Indexer implements AutoCloseable {
     public static class IndexerException extends Exception {
@@ -26,10 +28,8 @@ public class Indexer implements AutoCloseable {
         } catch (UnsupportedOperationException e) {
             throw new IndexerException(e);
         }
-        indexManagerThread = new Thread(indexManager);
-        indexManagerThread.start();
-        fsWatcherThread = new Thread(fsWatcher);
-        fsWatcherThread.start();
+        indexManager.startService();
+        fsWatcher.startService();
     }
 
     void add(String path) throws IOException {
@@ -45,13 +45,13 @@ public class Indexer implements AutoCloseable {
     }
 
     public void close() throws Exception {
-        fsWatcherThread.interrupt();
-        fsWatcherThread.join();
+        fsWatcher.stopService();
+        fsWatcher.waitFinished(10, TimeUnit.DAYS);
+        indexManager.stopService();
+        indexManager.waitFinished(10, TimeUnit.DAYS);
     }
 
-    private final FSWatcher fsWatcher;
-    private final Thread fsWatcherThread;
+    private final IFSWatcher fsWatcher;
     private final ITokenizerFactory tf;
     private final IIndexManager indexManager;
-    private final Thread indexManagerThread;
 }

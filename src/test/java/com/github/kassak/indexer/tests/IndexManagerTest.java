@@ -8,6 +8,7 @@ import org.junit.Test;
 
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Handler;
 import java.util.logging.Level;
@@ -25,8 +26,7 @@ public class IndexManagerTest {
     @Test
     public void  processing() throws InterruptedException {
         IIndexManager im = new IndexManager(new WhitespaceTokenizerFactory(), 10, 10, 100);
-        Thread imt =  new Thread(im);
-        imt.start();
+        im.startService();
 
         im.syncFile(FileSystems.getDefault().getPath("1/1/1"));
         im.syncFile(FileSystems.getDefault().getPath("1/1/2"));
@@ -68,7 +68,7 @@ public class IndexManagerTest {
         Assert.assertFalse(im.getFiles().contains(dummy.toString()));
 
 
-        imt.interrupt();
-        imt.join();
+        im.stopService();
+        im.waitFinished(10, TimeUnit.SECONDS);
     }
 }
