@@ -1,11 +1,11 @@
 package com.github.kassak.indexer;
 
 import com.github.kassak.indexer.storage.FileEntry;
+import com.github.kassak.indexer.tokenizing.ITokenizer;
 
 import java.io.FileNotFoundException;
 import java.nio.file.Path;
 import java.util.Collection;
-import java.util.List;
 
 public interface IIndexManager extends Runnable {
 

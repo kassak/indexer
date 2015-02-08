@@ -3,7 +3,7 @@ package com.github.kassak.indexer.utils;
 import java.util.concurrent.*;
 
 public class BlockingExecutor {
-    BlockingExecutor(int threadsNum, int queueSize) {
+    public BlockingExecutor(int threadsNum, int queueSize) {
         if(threadsNum > queueSize)
             queueSize = threadsNum;
         executor = new ThreadPoolExecutor(threadsNum, threadsNum, 5

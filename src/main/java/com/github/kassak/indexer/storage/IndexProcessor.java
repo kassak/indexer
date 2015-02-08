@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
-import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -20,12 +19,12 @@ public class IndexProcessor {
         if(log.isLoggable(Level.FINE))
             log.fine("syncing file " + file);
         IndexedFile f = index.getOrAddFile(file, stamp);
-        assert(f.getStamp() <= stamp); //this is guaranteed
-        f.setStamp(stamp);
-        if(f.getState() == IndexedFile.PROCESSING) //already processing
+        assert(f.stamp <= stamp); //this is guaranteed
+        f.stamp = stamp;
+        if(f.state == IndexedFile.PROCESSING) //already processing
             return;
-        f.setState(IndexedFile.PROCESSING);
-        f.setProcessingStamp(stamp);
+        f.state = IndexedFile.PROCESSING;
+        f.processingStamp = stamp;
         processFile(file);
     }
 
@@ -42,6 +41,8 @@ public class IndexProcessor {
 
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                    if(Thread.currentThread().isInterrupted())
+                        return FileVisitResult.SKIP_SIBLINGS;
                     //TODO: check file modification
                     syncFile(stamp, file);
                     return FileVisitResult.CONTINUE;
@@ -56,6 +57,8 @@ public class IndexProcessor {
         } catch (IOException e) {
             log.log(Level.WARNING, "Error while syncing dir " + file, e);
         }
+        if(Thread.currentThread().isInterrupted())
+            return;
         index.removeNonexistent(file);
     }
 
@@ -86,18 +89,18 @@ public class IndexProcessor {
                 log.fine("Finished processing removed file " + sfile);
             return;
         }
-        assert(f.getState() == IndexedFile.PROCESSING && f.getProcessingStamp() <= stamp); //NOTE: how couldn't it be?
-        if(f.getStamp() > stamp) { //modified while processing
+        assert(f.state == IndexedFile.PROCESSING && f.processingStamp <= stamp); //NOTE: how couldn't it be?
+        if(f.stamp > stamp) { //modified while processing
             if(log.isLoggable(Level.FINE))
                 log.fine("File was modified while processing. Doing it again " + sfile);
-            f.setProcessingStamp(f.getStamp());
-            f.setState(IndexedFile.PROCESSING);
+            f.processingStamp = f.stamp;
+            f.state = IndexedFile.PROCESSING;
             processFile(file);
         }
         else {
-            f.setStamp(stamp);
-            f.setProcessingStamp(stamp);
-            f.setState(b ? IndexedFile.VALID : IndexedFile.INVALID); //TODO: do we need to retry on invalid?
+            f.stamp = stamp;
+            f.processingStamp = stamp;
+            f.state = (b ? IndexedFile.VALID : IndexedFile.INVALID); //TODO: do we need to retry on invalid?
         }
     }
 
@@ -119,8 +122,6 @@ public class IndexProcessor {
     }
 
     private final IndexStorage index;
-    //private final SortedMap<String, IndexedFile> files;
     private final IIndexManager indexManager;
-    //private final IVocabulary<IndexedWord> index;
     private static final Logger log = Logger.getLogger(IndexProcessor.class.getName());
 }

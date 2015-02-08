@@ -1,4 +1,6 @@
-package com.github.kassak.indexer;
+package com.github.kassak.indexer.tokenizing;
+
+import com.github.kassak.indexer.IIndexManager;
 
 import java.io.FileNotFoundException;
 import java.nio.file.Files;

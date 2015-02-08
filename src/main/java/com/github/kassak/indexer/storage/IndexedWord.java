@@ -7,9 +7,5 @@ class IndexedWord {
         this.word = word;
     }
 
-    public String getWord() {
-        return word;
-    }
-
-    private final String word;
+    public final String word;
 }

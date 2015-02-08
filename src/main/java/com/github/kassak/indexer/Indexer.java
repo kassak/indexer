@@ -1,11 +1,13 @@
 package com.github.kassak.indexer;
 
+import com.github.kassak.indexer.fs.FSProcessor;
+import com.github.kassak.indexer.fs.FSWatcher;
 import com.github.kassak.indexer.storage.FileEntry;
+import com.github.kassak.indexer.tokenizing.ITokenizerFactory;
 
 import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.util.Collection;
-import java.util.Iterator;
 
 public class Indexer implements AutoCloseable {
     public static class IndexerException extends Exception {

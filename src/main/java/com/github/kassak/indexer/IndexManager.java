@@ -2,12 +2,14 @@ package com.github.kassak.indexer;
 
 import com.github.kassak.indexer.storage.FileEntry;
 import com.github.kassak.indexer.storage.IndexProcessor;
+import com.github.kassak.indexer.tokenizing.FilesProcessor;
+import com.github.kassak.indexer.tokenizing.ITokenizer;
+import com.github.kassak.indexer.tokenizing.ITokenizerFactory;
 
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.nio.file.Path;
 import java.util.Collection;
-import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 

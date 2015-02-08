@@ -2,14 +2,10 @@ package com.github.kassak.indexer.tests;
 
 import com.github.kassak.indexer.IIndexManager;
 import com.github.kassak.indexer.IndexManager;
-import com.github.kassak.indexer.SeparatorTokenizer;
-import com.github.kassak.indexer.WhitespaceTokenizerFactory;
+import com.github.kassak.indexer.tokenizing.WhitespaceTokenizerFactory;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.Writer;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.util.logging.ConsoleHandler;

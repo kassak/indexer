@@ -1,5 +1,6 @@
-package com.github.kassak.indexer;
+package com.github.kassak.indexer.tokenizing;
 
+import com.github.kassak.indexer.IIndexManager;
 import com.github.kassak.indexer.utils.BlockingExecutor;
 
 import java.nio.file.Path;

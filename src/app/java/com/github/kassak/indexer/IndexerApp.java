@@ -1,6 +1,8 @@
 package com.github.kassak.indexer;
 
 import com.github.kassak.indexer.storage.FileEntry;
+import com.github.kassak.indexer.tokenizing.ITokenizerFactory;
+import com.github.kassak.indexer.tokenizing.WhitespaceTokenizerFactory;
 
 import java.util.Collection;
 import java.util.Scanner;

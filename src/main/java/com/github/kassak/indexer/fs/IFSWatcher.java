@@ -1,4 +1,4 @@
-package com.github.kassak.indexer;
+package com.github.kassak.indexer.fs;
 
 import java.io.IOException;
 import java.nio.file.Path;

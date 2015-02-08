@@ -15,35 +15,7 @@ class IndexedFile {
         this.processingStamp = stamp;
     }
 
-    public String getPath() {
-        return path;
-    }
-
-    public int getState() {
-        return state;
-    }
-
-    public void setState(int state) {
-        this.state = state;
-    }
-
-    public long getStamp() {
-        return stamp;
-    }
-
-    public void setStamp(long stamp) {
-        this.stamp = stamp;
-    }
-
-    public long getProcessingStamp() {
-        return processingStamp;
-    }
-
-    public void setProcessingStamp(long processingStamp) {
-        this.processingStamp = processingStamp;
-    }
-
-    private final String path;
-    private int state;
-    private long stamp, processingStamp;
+    public final String path;
+    public volatile int state;
+    public long stamp, processingStamp;
 }

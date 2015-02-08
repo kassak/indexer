@@ -1,4 +1,4 @@
-package com.github.kassak.indexer;
+package com.github.kassak.indexer.fs;
 
 import com.github.kassak.indexer.utils.InterruptibleCallable;
 import com.github.kassak.indexer.utils.Uninterruptible;

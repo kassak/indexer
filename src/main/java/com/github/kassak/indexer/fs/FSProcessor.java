@@ -1,9 +1,8 @@
-package com.github.kassak.indexer;
+package com.github.kassak.indexer.fs;
 
-import java.io.IOException;
+import com.github.kassak.indexer.IIndexManager;
+
 import java.nio.file.*;
-import java.nio.file.attribute.BasicFileAttributes;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class FSProcessor implements IFSProcessor {

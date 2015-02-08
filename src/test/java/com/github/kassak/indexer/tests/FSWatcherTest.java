@@ -1,19 +1,16 @@
 package com.github.kassak.indexer.tests;
 
-import com.github.kassak.indexer.FSWatcher;
-import com.github.kassak.indexer.IFSProcessor;
-import com.github.kassak.indexer.IFSWatcher;
+import com.github.kassak.indexer.fs.FSWatcher;
+import com.github.kassak.indexer.fs.IFSProcessor;
+import com.github.kassak.indexer.fs.IFSWatcher;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;

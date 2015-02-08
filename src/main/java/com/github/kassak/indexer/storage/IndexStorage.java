@@ -39,7 +39,7 @@ public class IndexStorage {
         IndexedWordWrapper iword = words.get(word);
         if(iword == null) {
             iword = new IndexedWordWrapper(new IndexedWord(word));
-            words.put(iword.wrapped.getWord(), iword);
+            words.put(iword.wrapped.word, iword);
         }
         iword.files.add(ifile);
         ifile.words.add(iword);
@@ -51,7 +51,7 @@ public class IndexStorage {
             return Collections.emptyList();
         List<FileEntry> res = new ArrayList<>();
         for(IndexedFileWrapper ifile : iword.files)
-            res.add(new FileEntry(ifile.wrapped.getPath(), ifile.wrapped.getState() == IndexedFile.VALID));
+            res.add(new FileEntry(ifile.wrapped.path, ifile.wrapped.state == IndexedFile.VALID));
         return res;
     }
 
@@ -66,7 +66,7 @@ public class IndexStorage {
         IndexedFileWrapper ifile = files.get(file.toString());
         if(ifile == null) {
             ifile = new IndexedFileWrapper(new IndexedFile(file.toString(), IndexedFile.INVALID, stamp));
-            files.put(ifile.wrapped.getPath(), ifile);
+            files.put(ifile.wrapped.path, ifile);
         }
         return ifile.wrapped;
     }
@@ -119,7 +119,7 @@ public class IndexStorage {
             it.remove();
             iword.files.remove(ifile);
             if(iword.files.isEmpty())
-            words.remove(iword.wrapped.getWord());
+            words.remove(iword.wrapped.word);
         }
     }
 

@@ -1,4 +1,4 @@
-package com.github.kassak.indexer;
+package com.github.kassak.indexer.tokenizing;
 
 import java.io.Reader;
 
