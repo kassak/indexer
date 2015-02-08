@@ -26,7 +26,11 @@ public class IndexManagerTest {
     @Test
     public void  processing() throws InterruptedException {
         IIndexManager im = new IndexManager(new WhitespaceTokenizerFactory(), 10, 10, 100);
-        im.startService();
+        try {
+            im.startService();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
         im.syncFile(FileSystems.getDefault().getPath("1/1/1"));
         im.syncFile(FileSystems.getDefault().getPath("1/1/2"));
@@ -68,7 +72,11 @@ public class IndexManagerTest {
         Assert.assertFalse(im.getFiles().contains(dummy.toString()));
 
 
-        im.stopService();
+        try {
+            im.stopService();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         im.waitFinished(10, TimeUnit.SECONDS);
     }
 }

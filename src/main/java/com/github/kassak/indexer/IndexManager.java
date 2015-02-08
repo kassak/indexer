@@ -6,6 +6,7 @@ import com.github.kassak.indexer.tokenizing.FilesProcessor;
 import com.github.kassak.indexer.tokenizing.IFilesProcessor;
 import com.github.kassak.indexer.tokenizing.ITokenizer;
 import com.github.kassak.indexer.tokenizing.ITokenizerFactory;
+import com.github.kassak.indexer.utils.Services;
 import com.github.kassak.indexer.utils.ThreadService;
 
 import java.io.FileNotFoundException;
@@ -25,15 +26,18 @@ public class IndexManager extends ThreadService implements IIndexManager {
     }
 
     @Override
-    public void startService() {
+    public void startService() throws Exception {
         filesProcessor.startService();
         super.startService();
     }
 
     @Override
-    public void stopService() {
-        super.stopService();
-        filesProcessor.stopService();
+    public void stopService() throws Exception {
+        try {
+            super.stopService();
+        } finally {
+            Services.stopServices(filesProcessor);
+        }
     }
 
     @Override

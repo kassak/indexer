@@ -77,7 +77,11 @@ public class FSWatcherTest {
     public void fileRegistering() throws IOException, InterruptedException {
         Collector c = new Collector();
         IFSWatcher watcher = new FSWatcher(c);
-        watcher.startService();
+        try {
+            watcher.startService();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
         Path temp = Files.createTempFile("test-", ".txt").toAbsolutePath();
         temp.toFile().deleteOnExit();
@@ -131,7 +135,11 @@ public class FSWatcherTest {
         Assert.assertTrue(c.files.isEmpty());
         Assert.assertTrue(c.dirs.isEmpty());
 
-        watcher.stopService();
+        try {
+            watcher.stopService();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         watcher.waitFinished(10, TimeUnit.SECONDS);
     }
 
@@ -139,7 +147,11 @@ public class FSWatcherTest {
     public void directoryRegistering() throws IOException, InterruptedException {
         Collector c = new Collector();
         IFSWatcher watcher = new FSWatcher(c);
-        watcher.startService();
+        try {
+            watcher.startService();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
         Path base1 = Files.createTempDirectory("test-");
         base1.toFile().deleteOnExit();
@@ -217,7 +229,11 @@ public class FSWatcherTest {
         Assert.assertTrue(c.files.isEmpty());
         Assert.assertTrue(c.dirs.isEmpty());
 
-        watcher.stopService();
+        try {
+            watcher.stopService();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         watcher.waitFinished(10, TimeUnit.SECONDS);
     }
 
@@ -225,7 +241,11 @@ public class FSWatcherTest {
     public void errors() throws IOException, InterruptedException {
         Collector c = new Collector();
         IFSWatcher watcher = new FSWatcher(c);
-        watcher.startService();
+        try {
+            watcher.startService();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
         Path unexisting = Files.createTempDirectory("test-");
         Files.delete(unexisting);
@@ -234,7 +254,11 @@ public class FSWatcherTest {
         Assert.assertTrue(c.files.isEmpty());
         Assert.assertTrue(c.dirs.isEmpty());
 
-        watcher.stopService();
+        try {
+            watcher.stopService();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         watcher.waitFinished(10, TimeUnit.SECONDS);
     }
 }

@@ -28,8 +28,16 @@ public class Indexer implements AutoCloseable {
         } catch (UnsupportedOperationException e) {
             throw new IndexerException(e);
         }
-        indexManager.startService();
-        fsWatcher.startService();
+        try {
+            indexManager.startService();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        try {
+            fsWatcher.startService();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     void add(String path) throws IOException {

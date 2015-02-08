@@ -17,10 +17,30 @@ import static java.nio.file.StandardWatchEventKinds.*;
 
 public class FSWatcher extends ThreadService implements IFSWatcher {
     public FSWatcher(IFSProcessor fsProcessor) throws UnsupportedOperationException, IOException {
-        watcher = FileSystems.getDefault().newWatchService();
         this.fsProcessor = fsProcessor;
         this.watchKeys = new HashMap<>();
         this.watchFilters = new ConcurrentHashMap<>();
+    }
+
+    @Override
+    public void startService() throws Exception {
+        watcher = FileSystems.getDefault().newWatchService();
+        super.startService();
+    }
+
+    @Override
+    public void stopService() throws Exception {
+        try {
+            super.stopService();
+        }
+        finally {
+            try {
+                watcher.close();
+            } catch (IOException e) {
+                log.log(Level.WARNING, "Failed to close watcher", e);
+                throw e;
+            }
+        }
     }
 
     public void registerRoot(Path path) throws IOException {
@@ -235,13 +255,16 @@ public class FSWatcher extends ThreadService implements IFSWatcher {
 
     @Override
     public void run() {
-        try {
-            while (!Thread.interrupted()) {
+        while (!Thread.interrupted()) {
+            try {
                 WatchKey key;
                 try {
                     key = watcher.take();
-                } catch (InterruptedException x) {
+                } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
+                    break;
+                } catch (ClosedWatchServiceException e) {
+                    log.warning("Watch service closed. breaking");
                     break;
                 }
 
@@ -253,17 +276,17 @@ public class FSWatcher extends ThreadService implements IFSWatcher {
                         processOverflow(base);
                     } else if (kind == ENTRY_CREATE) {
                         Path p = base.resolve(asPathEvent(event).context()).toAbsolutePath();
-                        if(filterEvent(p))
+                        if (filterEvent(p))
                             continue;
                         processNewEntry(p);
                     } else if (kind == ENTRY_DELETE) {
                         Path p = base.resolve(asPathEvent(event).context()).toAbsolutePath();
-                        if(filterEvent(p))
+                        if (filterEvent(p))
                             continue;
                         processDeleteEntry(p);
                     } else if (kind == ENTRY_MODIFY) {
                         Path p = base.resolve(asPathEvent(event).context()).toAbsolutePath();
-                        if(filterEvent(p))
+                        if (filterEvent(p))
                             continue;
                         processModifyEntry(p);
                     } else {
@@ -277,13 +300,8 @@ public class FSWatcher extends ThreadService implements IFSWatcher {
                         unregisterDirectory(base);
                     }
                 }
-            }
-        }
-        finally {
-            try {
-                watcher.close();
-            } catch (IOException e) {
-                log.warning("Failed to close");
+            } catch (Exception e) {
+                log.log(Level.WARNING, "Exception in FSWatcher loop. ignoring", e);
             }
         }
     }
@@ -403,7 +421,7 @@ public class FSWatcher extends ThreadService implements IFSWatcher {
     private static WatchEvent<Path> asPathEvent(WatchEvent<?> event) {
         return (WatchEvent<Path>)event;
     }
-    private final WatchService watcher;
+    private WatchService watcher;
     private final IFSProcessor fsProcessor;
     private final Map<String, WatchKey> watchKeys;
     private final Map<String, Set<String>> watchFilters;

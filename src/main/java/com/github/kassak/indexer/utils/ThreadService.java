@@ -4,7 +4,7 @@ import java.util.concurrent.TimeUnit;
 
 public abstract class ThreadService implements IService, Runnable {
     @Override
-    public void startService() {
+    public void startService() throws Exception {
         if(thread != null && thread.isAlive())
             throw new IllegalStateException("Service already started");
         thread = new Thread(this);
@@ -12,9 +12,9 @@ public abstract class ThreadService implements IService, Runnable {
     }
 
     @Override
-    public void stopService() {
+    public void stopService() throws Exception {
         if(thread == null || !thread.isAlive())
-            throw new IllegalStateException("Service already stopped");
+            return; //already stopped
         thread.interrupt();
     }
 
