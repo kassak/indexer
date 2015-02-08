@@ -1,4 +1,4 @@
-package com.github.kassak.indexer;
+package com.github.kassak.indexer.utils;
 
 import java.util.concurrent.*;
 
@@ -29,7 +29,7 @@ public class BlockingExecutor {
         executor.shutdown();
     }
 
-    boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
+    public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
         return executor.awaitTermination(timeout, unit);
     }
 

@@ -1,9 +1,8 @@
 package com.github.kassak.indexer;
 
+import com.github.kassak.indexer.utils.BlockingExecutor;
+
 import java.nio.file.Path;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
 public class FilesProcessor {
