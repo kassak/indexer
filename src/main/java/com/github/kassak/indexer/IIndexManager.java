@@ -7,6 +7,8 @@ import com.github.kassak.indexer.utils.IService;
 import java.io.FileNotFoundException;
 import java.nio.file.Path;
 import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 
 public interface IIndexManager extends IService {
 
@@ -23,6 +25,6 @@ public interface IIndexManager extends IService {
     public void removeFile(Path file) throws InterruptedException;
     public void removeDirectory(Path file) throws InterruptedException;
 
-    public Collection<String> getFiles() ;
-    public void processFile(Path file) throws InterruptedException;
+    public List<Map.Entry<String, Integer>> getFiles() ;
+    public void processFile(Path file);
 }

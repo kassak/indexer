@@ -17,12 +17,15 @@ public class IndexProcessor {
     }
     public void syncFile(long stamp, Path file) {
         if(log.isLoggable(Level.FINE))
-            log.fine("syncing file " + file);
+            log.fine("Syncing file " + file);
         IndexedFile f = index.getOrAddFile(file, stamp);
         assert(f.stamp <= stamp); //this is guaranteed
         f.stamp = stamp;
-        if(f.state == IndexedFile.PROCESSING) //already processing
+        if(f.state == IndexedFile.PROCESSING) {//already processing
+            if(log.isLoggable(Level.FINE))
+                log.fine("Already processing " + file);
             return;
+        }
         f.state = IndexedFile.PROCESSING;
         f.processingStamp = stamp;
         processFile(file);
@@ -30,7 +33,7 @@ public class IndexProcessor {
 
     public void syncDirectory(final long stamp, Path file) {
         if(log.isLoggable(Level.FINE))
-            log.fine("syncing directory " + file);
+            log.fine("Syncing directory " + file);
         try {
             Files.walkFileTree(file, new SimpleFileVisitor<Path>() {
 
@@ -71,12 +74,9 @@ public class IndexProcessor {
     }
 
     private void processFile(Path file) {
-        try {
-            indexManager.processFile(file);
-        } catch (InterruptedException e) {
-            log.warning("Interrupted while queueing of processing of " + file);
-            Thread.currentThread().interrupt();
-        }
+        if(log.isLoggable(Level.FINE))
+            log.fine("Processing file " + file);
+        indexManager.processFile(file);
     }
 
     public void fileFinished(long stamp, Path file, boolean b) {
@@ -85,8 +85,7 @@ public class IndexProcessor {
             log.fine("File finished " + sfile + " with result " + b);
         IndexedFile f = index.getFile(file);
         if(f == null) { //file removed
-            if(log.isLoggable(Level.FINE))
-                log.fine("Finished processing removed file " + sfile);
+            log.warning("Finished processing removed file " + sfile);
             return;
         }
         assert(f.state == IndexedFile.PROCESSING && f.processingStamp <= stamp); //NOTE: how couldn't it be?
@@ -113,7 +112,7 @@ public class IndexProcessor {
     }
 
 
-    public Collection<String> getFiles() {
+    public List<Map.Entry<String, Integer>> getFiles() {
         return index.getFileNames();
     }
 

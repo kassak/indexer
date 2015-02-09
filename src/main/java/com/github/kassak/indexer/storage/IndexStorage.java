@@ -73,8 +73,11 @@ public class IndexStorage {
         return ifile.wrapped;
     }
 
-    public Collection<String> getFileNames() {
-        return files.keySet();
+    public List<Map.Entry<String, Integer>> getFileNames() {
+        List<Map.Entry<String, Integer>> res = new ArrayList<>(files.size());
+        for(Map.Entry<String, IndexedFileWrapper> f : files.entrySet())
+            res.add(new AbstractMap.SimpleEntry<>(f.getKey(), f.getValue().words.size()));
+        return res;
     }
 
     public void removeFile(Path file) {

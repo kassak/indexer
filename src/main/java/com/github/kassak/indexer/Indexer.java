@@ -9,6 +9,8 @@ import com.github.kassak.indexer.tokenizing.ITokenizerFactory;
 import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 public class Indexer implements AutoCloseable {
@@ -50,6 +52,10 @@ public class Indexer implements AutoCloseable {
 
     Collection<FileEntry> search(String word) {
         return indexManager.search(word);
+    }
+
+    List<Map.Entry<String, Integer>> getFiles() {
+        return indexManager.getFiles();
     }
 
     public void close() throws Exception {

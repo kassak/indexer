@@ -2,8 +2,8 @@ package com.github.kassak.indexer.utils;
 
 import java.util.concurrent.*;
 
-public class BlockingExecutor {
-    public BlockingExecutor(int threadsNum, int queueSize) {
+public class BoundedExecutor {
+    public BoundedExecutor(int threadsNum, int queueSize) {
         if(threadsNum > queueSize)
             queueSize = threadsNum;
         executor = new ThreadPoolExecutor(threadsNum, threadsNum, 5
@@ -11,18 +11,24 @@ public class BlockingExecutor {
         semaphore = new Semaphore(queueSize);
     }
 
-    public void execute(final Runnable command) throws InterruptedException {
-        semaphore.acquire();
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    command.run();
-                } finally {
-                    semaphore.release();
+    public boolean tryExecute(final Runnable command) {
+        if(isShutdown())
+            throw new IllegalStateException("Already shut down");
+        if(semaphore.tryAcquire()) {
+            executor.execute(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        command.run();
+                    } finally {
+                        semaphore.release();
+                    }
                 }
-            }
-        });
+            });
+            return true;
+        } else {
+            return false;
+        }
     }
 
     public void shutdown() {
