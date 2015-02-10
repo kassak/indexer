@@ -1,8 +1,8 @@
 package com.github.kassak.indexer.tests;
 
-import com.github.kassak.indexer.fs.FSWatcher;
-import com.github.kassak.indexer.fs.IFSProcessor;
-import com.github.kassak.indexer.fs.IFSWatcher;
+import com.github.kassak.indexer.fs.FSEventsService;
+import com.github.kassak.indexer.fs.IFSEventsProcessor;
+import com.github.kassak.indexer.fs.IFSWatcherService;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Test;
@@ -21,7 +21,7 @@ import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-class Collector implements IFSProcessor {
+class Collector implements IFSEventsProcessor {
 
     Collector() {
         files = new ConcurrentSkipListSet<>();
@@ -77,7 +77,7 @@ public class FSWatcherTest {
     @Test
     public void fileRegistering() throws IOException, InterruptedException {
         Collector c = new Collector();
-        IFSWatcher watcher = new FSWatcher(c);
+        FSEventsService watcher = new FSEventsService(c);
         try {
             watcher.startService();
         } catch (Exception e) {
@@ -147,7 +147,7 @@ public class FSWatcherTest {
     @Test
     public void directoryRegistering() throws IOException, InterruptedException {
         Collector c = new Collector();
-        IFSWatcher watcher = new FSWatcher(c);
+        FSEventsService watcher = new FSEventsService(c);
         try {
             watcher.startService();
         } catch (Exception e) {
@@ -241,7 +241,7 @@ public class FSWatcherTest {
     @Test
     public void errors() throws IOException, InterruptedException {
         Collector c = new Collector();
-        IFSWatcher watcher = new FSWatcher(c);
+        FSEventsService watcher = new FSEventsService(c);
         try {
             watcher.startService();
         } catch (Exception e) {

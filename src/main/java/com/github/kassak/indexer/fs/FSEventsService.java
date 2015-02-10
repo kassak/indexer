@@ -16,8 +16,8 @@ import java.util.logging.Logger;
 
 import static java.nio.file.StandardWatchEventKinds.*;
 
-public class FSWatcher extends ThreadService implements IFSWatcher {
-    public FSWatcher(@NotNull IFSProcessor fsProcessor) {
+public class FSEventsService extends ThreadService {
+    public FSEventsService(@NotNull IFSEventsProcessor fsProcessor) {
         this.fsProcessor = fsProcessor;
         this.watchKeys = new HashMap<>();
         this.watchFilters = new ConcurrentHashMap<>();
@@ -420,10 +420,10 @@ public class FSWatcher extends ThreadService implements IFSWatcher {
         return (WatchEvent<Path>)event;
     }
     private WatchService watcher;
-    private final IFSProcessor fsProcessor;
+    private final IFSEventsProcessor fsProcessor;
     @NotNull
     private final Map<String, WatchKey> watchKeys;
     @NotNull
     private final Map<String, Set<String>> watchFilters;
-    private static final Logger log = Logger.getLogger(FSWatcher.class.getName());
+    private static final Logger log = Logger.getLogger(FSEventsService.class.getName());
 }

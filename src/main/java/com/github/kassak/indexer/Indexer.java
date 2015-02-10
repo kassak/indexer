@@ -1,8 +1,9 @@
 package com.github.kassak.indexer;
 
-import com.github.kassak.indexer.fs.FSProcessor;
-import com.github.kassak.indexer.fs.FSWatcher;
-import com.github.kassak.indexer.fs.IFSWatcher;
+import com.github.kassak.indexer.fs.FSEventsProcessor;
+import com.github.kassak.indexer.fs.FSEventsService;
+import com.github.kassak.indexer.fs.FSWatcherService;
+import com.github.kassak.indexer.fs.IFSWatcherService;
 import com.github.kassak.indexer.storage.FileEntry;
 import com.github.kassak.indexer.tokenizing.ITokenizerFactory;
 import com.github.kassak.indexer.utils.IService;
@@ -17,9 +18,9 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 public class Indexer implements IService {
-    Indexer(ITokenizerFactory tf, int queueSize, int fileThreads, int fileQueueSize) {
+    Indexer(ITokenizerFactory tf, int regQueueSize, int queueSize, int fileThreads, int fileQueueSize) {
         indexManager = new IndexManager(tf, queueSize, fileThreads, fileQueueSize);
-        fsWatcher = new FSWatcher(new FSProcessor(indexManager));
+        fsWatcher = new FSWatcherService(new FSEventsProcessor(indexManager), regQueueSize);
     }
 
     @Override
@@ -58,6 +59,6 @@ public class Indexer implements IService {
         return indexManager.getFiles();
     }
 
-    private final IFSWatcher fsWatcher;
+    private final IFSWatcherService fsWatcher;
     private final IIndexManager indexManager;
 }

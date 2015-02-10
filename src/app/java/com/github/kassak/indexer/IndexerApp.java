@@ -23,7 +23,7 @@ public class IndexerApp {
 
 
         ITokenizerFactory tf = new WhitespaceTokenizerFactory();
-        Indexer indexer = new Indexer(tf, 100, 10, 100);
+        Indexer indexer = new Indexer(tf, 10, 100, 10, 100);
         try(Scanner ins = new Scanner(System.in)) {
             indexer.startService();
             while(true) {

@@ -5,8 +5,8 @@ import org.jetbrains.annotations.NotNull;
 
 import java.nio.file.*;
 
-public class FSProcessor implements IFSProcessor {
-    public FSProcessor(@NotNull IIndexManager im) {
+public class FSEventsProcessor implements IFSEventsProcessor {
+    public FSEventsProcessor(@NotNull IIndexManager im) {
         this.indexManager = im;
     }
 
