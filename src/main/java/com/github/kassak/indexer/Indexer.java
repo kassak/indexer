@@ -5,6 +5,9 @@ import com.github.kassak.indexer.fs.FSWatcher;
 import com.github.kassak.indexer.fs.IFSWatcher;
 import com.github.kassak.indexer.storage.FileEntry;
 import com.github.kassak.indexer.tokenizing.ITokenizerFactory;
+import com.github.kassak.indexer.utils.IService;
+import com.github.kassak.indexer.utils.Services;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.nio.file.FileSystems;
@@ -13,59 +16,48 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-public class Indexer implements AutoCloseable {
-    public static class IndexerException extends Exception {
-        IndexerException(Exception e) {
-            super(e);
-        }
+public class Indexer implements IService {
+    Indexer(ITokenizerFactory tf, int queueSize, int fileThreads, int fileQueueSize) {
+        indexManager = new IndexManager(tf, queueSize, fileThreads, fileQueueSize);
+        fsWatcher = new FSWatcher(new FSProcessor(indexManager));
     }
 
-    Indexer(ITokenizerFactory tf, int queueSize, int fileThreads, int fileQueueSize) throws IndexerException {
-        this.tf = tf;
-        try {
-            indexManager = new IndexManager(tf, queueSize, fileThreads, fileQueueSize);
-            fsWatcher = new FSWatcher(new FSProcessor(indexManager));
-        } catch (IOException e) {
-            throw new IndexerException(e);
-        } catch (UnsupportedOperationException e) {
-            throw new IndexerException(e);
-        }
-        try {
-            indexManager.startService();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        try {
-            fsWatcher.startService();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+    @Override
+    public void startService() throws Exception {
+        Services.startServices(indexManager, fsWatcher);
     }
 
-    void add(String path) throws IOException {
+    @Override
+    public void stopService() throws Exception {
+        Services.stopServices(fsWatcher, indexManager);
+    }
+
+    @Override
+    public boolean isRunning() {
+        return Services.isServicesRunning(fsWatcher, indexManager);
+    }
+
+    @Override
+    public boolean waitFinished(long timeout, @NotNull TimeUnit unit) throws InterruptedException {
+        return Services.waitServicesFinished(timeout, unit, fsWatcher, indexManager);
+    }
+
+    void add(@NotNull String path) throws IOException {
         fsWatcher.registerRoot(FileSystems.getDefault().getPath(path));
     }
 
-    void remove(String path) throws IOException {
+    void remove(@NotNull String path) throws IOException {
         fsWatcher.unregisterRoot(FileSystems.getDefault().getPath(path));
     }
 
-    Collection<FileEntry> search(String word) {
+    @NotNull Collection<FileEntry> search(@NotNull String word) {
         return indexManager.search(word);
     }
 
-    List<Map.Entry<String, Integer>> getFiles() {
+    public @NotNull List<Map.Entry<String, Integer>> getFiles() {
         return indexManager.getFiles();
     }
 
-    public void close() throws Exception {
-        fsWatcher.stopService();
-        fsWatcher.waitFinished(10, TimeUnit.DAYS);
-        indexManager.stopService();
-        indexManager.waitFinished(10, TimeUnit.DAYS);
-    }
-
     private final IFSWatcher fsWatcher;
-    private final ITokenizerFactory tf;
     private final IIndexManager indexManager;
 }

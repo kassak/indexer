@@ -1,5 +1,8 @@
 package com.github.kassak.indexer.storage;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -12,9 +15,9 @@ import java.util.logging.Logger;
 /**
  * Concurrent SWMR bidirectional mapping between files & words
  */
-public class IndexStorage {
+class IndexStorage {
     static class IndexedWordWrapper {
-        public IndexedWordWrapper(IndexedWord wrapped) {
+        public IndexedWordWrapper(@NotNull IndexedWord wrapped) {
             this.wrapped = wrapped;
             files = Collections.newSetFromMap(new ConcurrentHashMap<IndexedFileWrapper, Boolean>());
         }
@@ -23,7 +26,7 @@ public class IndexStorage {
         public final Set<IndexedFileWrapper> files;
     }
     static class IndexedFileWrapper {
-        public IndexedFileWrapper(IndexedFile wrapped) {
+        public IndexedFileWrapper(@NotNull IndexedFile wrapped) {
             this.wrapped = wrapped;
             words = Collections.newSetFromMap(new ConcurrentHashMap<IndexedWordWrapper, Boolean>());
         }
@@ -31,9 +34,9 @@ public class IndexStorage {
         public final IndexedFile wrapped;
         public final Set<IndexedWordWrapper> words;
     }
-    public void addWord(Path file, String word) {
+    public void addWord(@NotNull Path file, @NotNull String word) {
         IndexedFileWrapper ifile = files.get(file.toString());
-        if(file == null) {
+        if(ifile == null) {
             if(log.isLoggable(Level.FINE))
                 log.fine("Ignoring attempt to add word to removed file " + file);
             return;
@@ -47,7 +50,8 @@ public class IndexStorage {
         ifile.words.add(iword);
     }
 
-    public Collection<FileEntry> search(String word) {
+    @NotNull
+    public Collection<FileEntry> search(@NotNull String word) {
         IndexedWordWrapper iword = words.get(word);
         if(iword == null)
             return Collections.emptyList();
@@ -57,22 +61,24 @@ public class IndexStorage {
         return res;
     }
 
-    public IndexedFile getFile(Path file) {
+    @Nullable
+    public IndexedFile getFile(@NotNull Path file) {
         IndexedFileWrapper ifile = files.get(file.toString());
         if(ifile == null)
             return null;
         return ifile.wrapped;
     }
 
-    public IndexedFile getOrAddFile(Path file, long stamp) {
+    public IndexedFile getOrAddFile(@NotNull Path file, long stamp) {
         IndexedFileWrapper ifile = files.get(file.toString());
         if(ifile == null) {
-            ifile = new IndexedFileWrapper(new IndexedFile(file.toString(), IndexedFile.INVALID, stamp));
+            ifile = new IndexedFileWrapper(new IndexedFile(file.toString(), stamp));
             files.put(ifile.wrapped.path, ifile);
         }
         return ifile.wrapped;
     }
 
+    @NotNull
     public List<Map.Entry<String, Integer>> getFileNames() {
         List<Map.Entry<String, Integer>> res = new ArrayList<>(files.size());
         for(Map.Entry<String, IndexedFileWrapper> f : files.entrySet())
@@ -80,14 +86,14 @@ public class IndexStorage {
         return res;
     }
 
-    public void removeFile(Path file) {
+    public void removeFile(@NotNull Path file) {
         if(log.isLoggable(Level.FINE))
             log.fine("Removing file " + file);
         removeWords(file);
         files.remove(file.toString());
     }
 
-    public void removeDirectory(Path file) {
+    public void removeDirectory(@NotNull Path file) {
         String sfile = file.toString();
         if(log.isLoggable(Level.FINE))
             log.fine("Removing directory " + sfile);
@@ -98,7 +104,7 @@ public class IndexStorage {
         }
     }
 
-    public void removeNonexistent(Path file) {
+    public void removeNonexistent(@NotNull Path file) {
         String sfile = file.toString();
         if(log.isLoggable(Level.FINE))
             log.fine("Removing nonexistent " + sfile);
@@ -111,7 +117,7 @@ public class IndexStorage {
         }
     }
 
-    public void removeWords(Path file) {
+    public void removeWords(@NotNull Path file) {
         IndexedFileWrapper ifile = files.get(file.toString());
         if(ifile == null) {
             if(log.isLoggable(Level.FINE))

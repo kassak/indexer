@@ -3,6 +3,7 @@ package com.github.kassak.indexer;
 import com.github.kassak.indexer.storage.FileEntry;
 import com.github.kassak.indexer.tokenizing.ITokenizerFactory;
 import com.github.kassak.indexer.tokenizing.WhitespaceTokenizerFactory;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 import java.util.logging.ConsoleHandler;
@@ -22,10 +23,9 @@ public class IndexerApp {
 
 
         ITokenizerFactory tf = new WhitespaceTokenizerFactory();
-        try(
-            Indexer indexer = new Indexer(tf, 100, 10, 100);
-            Scanner ins = new Scanner(System.in)
-        ) {
+        Indexer indexer = new Indexer(tf, 100, 10, 100);
+        try(Scanner ins = new Scanner(System.in)) {
+            indexer.startService();
             while(true) {
                 System.out.print("`?` for help > ");
                 System.out.flush();
@@ -68,7 +68,7 @@ public class IndexerApp {
                         List<FileEntry> res = new ArrayList<>(indexer.search(ins.nextLine().trim()));
                         Collections.sort(res, new Comparator<FileEntry>() {
                             @Override
-                            public int compare(FileEntry o1, FileEntry o2) {
+                            public int compare(@NotNull FileEntry o1, @NotNull FileEntry o2) {
                                 return o1.getPath().compareTo(o2.getPath());
                             }
                         });
@@ -89,7 +89,7 @@ public class IndexerApp {
                     List<Map.Entry<String, Integer>> res = indexer.getFiles();
                     Collections.sort(res, new Comparator<Map.Entry<String, Integer>>() {
                         @Override
-                        public int compare(Map.Entry<String, Integer> o1, Map.Entry<String, Integer> o2) {
+                        public int compare(@NotNull Map.Entry<String, Integer> o1, @NotNull Map.Entry<String, Integer> o2) {
                             return o1.getKey().compareTo(o2.getKey());
                         }
                     });
@@ -121,10 +121,15 @@ public class IndexerApp {
                 }
 
             }
-        } catch (Indexer.IndexerException e) {
-            e.printStackTrace();
         } catch (Exception e) {
             e.printStackTrace();
+        } finally {
+            try {
+                indexer.stopService();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
+
     }
 }

@@ -1,21 +1,38 @@
 package com.github.kassak.indexer.tokenizing;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.io.Reader;
 import java.util.Scanner;
 
-public class SeparatorTokenizer implements ITokenizer {
-    SeparatorTokenizer(Reader r, String delim) {
+class SeparatorTokenizer implements ITokenizer {
+    SeparatorTokenizer(@NotNull Reader r, @NotNull String delim) {
         scanner = new Scanner(r);
         scanner.useDelimiter(delim);
+        advance();
+    }
+
+    private void advance() {
+        do {
+            if(scanner.hasNext()) {
+                nextToken = scanner.next();
+            }
+            else {
+                nextToken = null;
+                break;
+            }
+        } while(nextToken.isEmpty());
     }
     @Override
     public boolean hasNext() {
-        return scanner.hasNext();
+        return nextToken != null;
     }
 
     @Override
     public String next() {
-        return scanner.next();
+        String res = nextToken;
+        advance();
+        return res;
     }
 
     @Override
@@ -28,5 +45,6 @@ public class SeparatorTokenizer implements ITokenizer {
         scanner.close();
     }
 
-    private Scanner scanner;
+    private final Scanner scanner;
+    private String nextToken;
 }

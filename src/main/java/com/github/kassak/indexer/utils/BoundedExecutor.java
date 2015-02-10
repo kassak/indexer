@@ -1,5 +1,7 @@
 package com.github.kassak.indexer.utils;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.util.concurrent.*;
 
 public class BoundedExecutor {
@@ -11,7 +13,7 @@ public class BoundedExecutor {
         semaphore = new Semaphore(queueSize);
     }
 
-    public boolean tryExecute(final Runnable command) {
+    public boolean tryExecute(@NotNull final Runnable command) {
         if(isShutdown())
             throw new IllegalStateException("Already shut down");
         if(semaphore.tryAcquire()) {
@@ -35,7 +37,7 @@ public class BoundedExecutor {
         executor.shutdown();
     }
 
-    public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
+    public boolean awaitTermination(long timeout, @NotNull TimeUnit unit) throws InterruptedException {
         return executor.awaitTermination(timeout, unit);
     }
 

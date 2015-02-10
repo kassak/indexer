@@ -1,12 +1,14 @@
 package com.github.kassak.indexer.storage;
 
+import org.jetbrains.annotations.NotNull;
+
 public class FileEntry {
-    public FileEntry(String path, boolean valid) {
+    public FileEntry(@NotNull String path, boolean valid) {
         this.path = path;
         this.valid = valid;
     }
 
-    public String getPath() {
+    public @NotNull String getPath() {
         return path;
     }
 

@@ -1,9 +1,9 @@
 package com.github.kassak.indexer.storage;
 
-import java.util.Set;
+import org.jetbrains.annotations.NotNull;
 
 class IndexedWord {
-    IndexedWord(String word) {
+    IndexedWord(@NotNull String word) {
         this.word = word;
     }
 

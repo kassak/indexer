@@ -1,6 +1,7 @@
 package com.github.kassak.indexer.storage;
 
 import com.github.kassak.indexer.*;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.nio.file.*;
@@ -11,11 +12,11 @@ import java.util.logging.Logger;
 
 public class IndexProcessor {
 
-    public IndexProcessor(IIndexManager im) {
+    public IndexProcessor(@NotNull IIndexManager im) {
         indexManager = im;
         index = new IndexStorage();
     }
-    public void syncFile(long stamp, Path file) {
+    public void syncFile(long stamp, @NotNull Path file) {
         if(log.isLoggable(Level.FINE))
             log.fine("Syncing file " + file);
         IndexedFile f = index.getOrAddFile(file, stamp);
@@ -31,12 +32,11 @@ public class IndexProcessor {
         processFile(file);
     }
 
-    public void syncDirectory(final long stamp, Path file) {
+    public void syncDirectory(final long stamp, @NotNull Path file) {
         if(log.isLoggable(Level.FINE))
             log.fine("Syncing directory " + file);
         try {
             Files.walkFileTree(file, new SimpleFileVisitor<Path>() {
-
                 @Override
                 public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
                     return FileVisitResult.SKIP_SUBTREE;
@@ -65,11 +65,11 @@ public class IndexProcessor {
         index.removeNonexistent(file);
     }
 
-    public void removeFile(long stamp, Path file) {
+    public void removeFile(long stamp, @NotNull Path file) {
         index.removeFile(file);
     }
 
-    public void removeDirectory(long stamp, Path file) {
+    public void removeDirectory(long stamp, @NotNull Path file) {
         index.removeDirectory(file);
     }
 
@@ -79,7 +79,7 @@ public class IndexProcessor {
         indexManager.processFile(file);
     }
 
-    public void fileFinished(long stamp, Path file, boolean b) {
+    public void fileFinished(long stamp, @NotNull Path file, boolean b) {
         String sfile = file.toString();
         if(log.isLoggable(Level.FINE))
             log.fine("File finished " + sfile + " with result " + b);
@@ -103,19 +103,21 @@ public class IndexProcessor {
         }
     }
 
-    public void removeWords(long stamp, Path file) {
+    public void removeWords(long stamp, @NotNull Path file) {
         index.removeWords(file);
     }
 
-    public void addWord(long stamp, Path file, String word) {
+    public void addWord(long stamp, @NotNull Path file, String word) {
         index.addWord(file, word);
     }
 
 
+    @NotNull
     public List<Map.Entry<String, Integer>> getFiles() {
         return index.getFileNames();
     }
 
+    @NotNull
     public Collection<FileEntry> search(String word) {
         return index.search(word);
     }

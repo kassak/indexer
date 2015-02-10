@@ -1,9 +1,11 @@
 package com.github.kassak.indexer.utils;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.util.logging.Logger;
 
 public class Uninterruptible {
-    public static boolean performUninterruptibly(InterruptibleCallable foo, int maxTries) {
+    public static boolean performUninterruptibly(@NotNull InterruptibleCallable foo, int maxTries) {
         boolean wasInterrupted = false;
         boolean finished = false;
         for(int i = 0; ; ++i) {

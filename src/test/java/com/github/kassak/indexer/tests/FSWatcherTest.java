@@ -3,6 +3,7 @@ package com.github.kassak.indexer.tests;
 import com.github.kassak.indexer.fs.FSWatcher;
 import com.github.kassak.indexer.fs.IFSProcessor;
 import com.github.kassak.indexer.fs.IFSWatcher;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -28,17 +29,17 @@ class Collector implements IFSProcessor {
     }
 
     @Override
-    public void onFileRemoved(Path file) {
+    public void onFileRemoved(@NotNull Path file) {
         files.remove(file.toString());
     }
 
     @Override
-    public void onFileChanged(Path file) {
+    public void onFileChanged(@NotNull Path file) {
         files.add(file.toString());
     }
 
     @Override
-    public void onDirectoryRemoved(Path file) {
+    public void onDirectoryRemoved(@NotNull Path file) {
         dirs.remove(file.toString());
         Iterator<String> it = files.iterator();
         while(it.hasNext()) {
@@ -49,7 +50,7 @@ class Collector implements IFSProcessor {
     }
 
     @Override
-    public void onDirectoryChanged(Path file) {
+    public void onDirectoryChanged(@NotNull Path file) {
         dirs.add(file.toString());
         Assert.assertTrue(false);
     }

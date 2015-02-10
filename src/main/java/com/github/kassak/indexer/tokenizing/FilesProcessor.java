@@ -2,19 +2,20 @@ package com.github.kassak.indexer.tokenizing;
 
 import com.github.kassak.indexer.IIndexManager;
 import com.github.kassak.indexer.utils.BoundedExecutor;
+import org.jetbrains.annotations.NotNull;
 
 import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
 
 public class FilesProcessor implements IFilesProcessor {
-    public FilesProcessor(IIndexManager im, int threadsNum, int queueSize) {
+    public FilesProcessor(@NotNull IIndexManager im, int threadsNum, int queueSize) {
         indexManager = im;
         this.threadsNum = threadsNum;
         this.queueSize = queueSize;
     }
 
     @Override
-    public boolean processFile(Path f) {
+    public boolean processFile(@NotNull Path f) {
         if(!isRunning())
             throw new IllegalStateException("Service not running");
         Runnable r = new FileProcessorUnit(indexManager, f);
@@ -41,7 +42,7 @@ public class FilesProcessor implements IFilesProcessor {
     }
 
     @Override
-    public boolean waitFinished(long timeout, TimeUnit unit) throws InterruptedException {
+    public boolean waitFinished(long timeout, @NotNull TimeUnit unit) throws InterruptedException {
         return executor.awaitTermination(timeout, unit);
     }
 

@@ -3,6 +3,7 @@ package com.github.kassak.indexer.fs;
 import com.github.kassak.indexer.utils.InterruptibleCallable;
 import com.github.kassak.indexer.utils.ThreadService;
 import com.github.kassak.indexer.utils.Uninterruptible;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.nio.file.*;
@@ -16,7 +17,7 @@ import java.util.logging.Logger;
 import static java.nio.file.StandardWatchEventKinds.*;
 
 public class FSWatcher extends ThreadService implements IFSWatcher {
-    public FSWatcher(IFSProcessor fsProcessor) throws UnsupportedOperationException, IOException {
+    public FSWatcher(@NotNull IFSProcessor fsProcessor) {
         this.fsProcessor = fsProcessor;
         this.watchKeys = new HashMap<>();
         this.watchFilters = new ConcurrentHashMap<>();
@@ -38,12 +39,11 @@ public class FSWatcher extends ThreadService implements IFSWatcher {
                 watcher.close();
             } catch (IOException e) {
                 log.log(Level.WARNING, "Failed to close watcher", e);
-                throw e;
             }
         }
     }
 
-    public void registerRoot(Path path) throws IOException {
+    public void registerRoot(@NotNull Path path) throws IOException {
         synchronized (watchKeys) {
             boolean finished = false;
             try {
@@ -114,7 +114,7 @@ public class FSWatcher extends ThreadService implements IFSWatcher {
         }
     }
 
-    public void unregisterRoot(final Path path) throws IOException {
+    public void unregisterRoot(@NotNull final Path path) throws IOException {
         synchronized (watchKeys) {
             if (Files.isDirectory(path)) {
                 if(watchKeys.containsKey(path.toAbsolutePath().getParent().toString())) {
@@ -160,7 +160,7 @@ public class FSWatcher extends ThreadService implements IFSWatcher {
         }
     }
 
-    private boolean registerDirectory(Path dir) throws IOException {
+    private boolean registerDirectory(@NotNull Path dir) throws IOException {
         String sdir = dir.toString();
         if(log.isLoggable(Level.FINE))
             log.fine("rigistering " + sdir);
@@ -179,7 +179,7 @@ public class FSWatcher extends ThreadService implements IFSWatcher {
         }
     }
 
-    private boolean registerFile(Path path) throws IOException {
+    private boolean registerFile(@NotNull Path path) throws IOException {
         Path dir = path.getParent();
         String sdir = dir.toString();
         String fname = path.getFileName().toString();
@@ -204,7 +204,7 @@ public class FSWatcher extends ThreadService implements IFSWatcher {
         }
     }
 
-    private boolean unregisterDirectory(Path dir) {
+    private boolean unregisterDirectory(@NotNull Path dir) {
         String sdir = dir.toString();
         if(log.isLoggable(Level.FINE))
             log.fine("Unregistering " + sdir);
@@ -220,7 +220,7 @@ public class FSWatcher extends ThreadService implements IFSWatcher {
         }
     }
 
-    private boolean unregisterFile(Path path) {
+    private boolean unregisterFile(@NotNull Path path) {
         Path dir = path.getParent();
         String sdir = dir.toString();
         String fname = path.getFileName().toString();
@@ -248,7 +248,7 @@ public class FSWatcher extends ThreadService implements IFSWatcher {
         }
     }
 
-    boolean filterEvent(Path path) {
+    boolean filterEvent(@NotNull Path path) {
         Set<String> s = watchFilters.get(path.getParent().toString());
         return s != null && !s.isEmpty() && !s.contains(path.getFileName().toString());
     }
@@ -306,7 +306,7 @@ public class FSWatcher extends ThreadService implements IFSWatcher {
         }
     }
 
-    private void processOverflow(Path path) {
+    private void processOverflow(@NotNull Path path) {
         log.warning("processOverflow " + path);
         synchronized (watchKeys) { //assure parent is still watched
             if(!watchKeys.containsKey(path.toString())) {
@@ -362,7 +362,7 @@ public class FSWatcher extends ThreadService implements IFSWatcher {
         }
     }
 
-    private void processNewEntry(Path path) {
+    private void processNewEntry(@NotNull Path path) {
         if(log.isLoggable(Level.FINE))
             log.fine("processNewEntry " + path);
         if(Files.isDirectory(path)) {
@@ -383,13 +383,12 @@ public class FSWatcher extends ThreadService implements IFSWatcher {
             } catch (InterruptedException e) {
                 log.warning("Interrupted while reporting change " + path);
                 Thread.currentThread().interrupt();
-                return;
             }
         else if(log.isLoggable(Level.FINE))
             log.fine("Ignoring creation of not directory nor file " + path);
     }
 
-    private void processDeleteEntry(Path path) {
+    private void processDeleteEntry(@NotNull Path path) {
         if (log.isLoggable(Level.FINE))
             log.fine("processDeleteEntry " + path.toString());
         synchronized (watchKeys) {
@@ -400,11 +399,10 @@ public class FSWatcher extends ThreadService implements IFSWatcher {
         } catch (InterruptedException e) {
             log.warning("Interrupted while reporting remove " + path);
             Thread.currentThread().interrupt();
-            return;
         }
     }
 
-    private void processModifyEntry(Path path) {
+    private void processModifyEntry(@NotNull Path path) {
         if(log.isLoggable(Level.FINE))
             log.fine("processModifyEntry " + path.toString());
         if (Files.isRegularFile(path))
@@ -413,17 +411,19 @@ public class FSWatcher extends ThreadService implements IFSWatcher {
             } catch (InterruptedException e) {
                 log.warning("Interrupted while reporting change " + path);
                 Thread.currentThread().interrupt();
-                return;
             }
     }
 
+    @NotNull
     @SuppressWarnings("unchecked")
-    private static WatchEvent<Path> asPathEvent(WatchEvent<?> event) {
+    private static WatchEvent<Path> asPathEvent(@NotNull WatchEvent<?> event) {
         return (WatchEvent<Path>)event;
     }
     private WatchService watcher;
     private final IFSProcessor fsProcessor;
+    @NotNull
     private final Map<String, WatchKey> watchKeys;
+    @NotNull
     private final Map<String, Set<String>> watchFilters;
     private static final Logger log = Logger.getLogger(FSWatcher.class.getName());
 }

@@ -1,6 +1,7 @@
 package com.github.kassak.indexer.tokenizing;
 
 import com.github.kassak.indexer.IIndexManager;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.FileNotFoundException;
 import java.nio.file.Files;
@@ -8,8 +9,8 @@ import java.nio.file.Path;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class FileProcessorUnit implements Runnable {
-    public FileProcessorUnit(IIndexManager im, Path f) {
+class FileProcessorUnit implements Runnable {
+    public FileProcessorUnit(@NotNull IIndexManager im, @NotNull Path f) {
         indexManager = im;
         file = f;
     }
@@ -55,7 +56,7 @@ public class FileProcessorUnit implements Runnable {
         indexManager.submitFinishedProcessing(file, stamp, finished);
     }
 
-    private void submitWord(String word) throws InterruptedException {
+    private void submitWord(@NotNull String word) throws InterruptedException {
         if(log.isLoggable(Level.FINEST))
             log.finest("Submitting word " + file + " : " + word);
         indexManager.addWordToIndex(file, word);

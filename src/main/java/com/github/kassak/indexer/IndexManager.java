@@ -8,6 +8,7 @@ import com.github.kassak.indexer.tokenizing.ITokenizer;
 import com.github.kassak.indexer.tokenizing.ITokenizerFactory;
 import com.github.kassak.indexer.utils.Services;
 import com.github.kassak.indexer.utils.ThreadService;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.FileNotFoundException;
 import java.io.FileReader;
@@ -17,7 +18,7 @@ import java.util.concurrent.*;
 
 public class IndexManager extends ThreadService implements IIndexManager {
 
-    public IndexManager(ITokenizerFactory tf, int queueSize, int fileThreads, int fileQueueSize) {
+    public IndexManager(@NotNull ITokenizerFactory tf, int queueSize, int fileThreads, int fileQueueSize) {
         tasks = new PriorityBlockingQueue<>();
         tasksSemaphore = new Semaphore(queueSize);
         wordsSemaphore = new Semaphore(queueSize);
@@ -29,6 +30,7 @@ public class IndexManager extends ThreadService implements IIndexManager {
 
     @Override
     public void startService() throws Exception {
+        //TODO
         filesProcessor.startService();
         super.startService();
     }
@@ -42,19 +44,20 @@ public class IndexManager extends ThreadService implements IIndexManager {
         }
     }
 
+    @NotNull
     @Override
-    public Collection<FileEntry> search(String word) {
+    public Collection<FileEntry> search(@NotNull String word) {
         return indexProcessor.search(word);
     }
 
     @Override
-    public void addWordToIndex(Path file, String word) throws InterruptedException {
+    public void addWordToIndex(@NotNull Path file, @NotNull String word) throws InterruptedException {
         wordsSemaphore.acquire();
         tasks.put(new IndexManagerTask(IndexManagerTask.ADD_WORD, file, word));
     }
 
     @Override
-    public void removeFromIndex(Path file) throws InterruptedException {
+    public void removeFromIndex(@NotNull Path file) throws InterruptedException {
         tasksSemaphore.acquire();
         tasks.put(new IndexManagerTask(IndexManagerTask.REMOVE_WORDS, file, null));
     }
@@ -71,46 +74,48 @@ public class IndexManager extends ThreadService implements IIndexManager {
     }
 
     @Override
-    public void submitFinishedProcessing(Path file, long stamp, boolean valid) throws InterruptedException {
+    public void submitFinishedProcessing(@NotNull Path file, long stamp, boolean valid) throws InterruptedException {
         tasks.put(new IndexManagerTask(valid ? IndexManagerTask.FILE_FINISHED_OK : IndexManagerTask.FILE_FINISHED_FAIL, file, stamp, null));
+        tryProcessFiles();
     }
 
     @Override
-    public ITokenizer newTokenizer(Path file) throws FileNotFoundException {
+    public @NotNull ITokenizer newTokenizer(@NotNull Path file) throws FileNotFoundException {
         return tokenizerFactory.create(new FileReader(file.toFile()));
     }
 
     @Override
-    public void syncFile(Path file) throws InterruptedException {
+    public void syncFile(@NotNull Path file) throws InterruptedException {
         tasksSemaphore.acquire();
         tasks.put(new IndexManagerTask(IndexManagerTask.SYNC_FILE, file, null));
     }
 
     @Override
-    public void syncDirectory(Path file) throws InterruptedException {
+    public void syncDirectory(@NotNull Path file) throws InterruptedException {
         tasksSemaphore.acquire();
         tasks.put(new IndexManagerTask(IndexManagerTask.SYNC_DIR, file, null));
     }
 
     @Override
-    public void removeFile(Path file) throws InterruptedException {
+    public void removeFile(@NotNull Path file) throws InterruptedException {
         tasksSemaphore.acquire();
         tasks.put(new IndexManagerTask(IndexManagerTask.DEL_FILE, file, null));
     }
 
     @Override
-    public void removeDirectory(Path file) throws InterruptedException {
+    public void removeDirectory(@NotNull Path file) throws InterruptedException {
         tasksSemaphore.acquire();
         tasks.put(new IndexManagerTask(IndexManagerTask.DEL_DIR, file, null));
     }
 
+    @NotNull
     @Override
     public List<Map.Entry<String, Integer>> getFiles() {
         return indexProcessor.getFiles();
     }
 
     @Override
-    public void processFile(Path file){
+    public void processFile(@NotNull Path file){
         if(!filesProcessor.processFile(file)) {
             filesQueue.add(file);
         }
@@ -147,11 +152,11 @@ public class IndexManager extends ThreadService implements IIndexManager {
                         break;
                     case IndexManagerTask.FILE_FINISHED_OK:
                     case IndexManagerTask.FILE_FINISHED_FAIL:
-                        indexProcessor.fileFinished(task.stamp, task.path, true);
+                        indexProcessor.fileFinished(task.stamp, task.path, task.task == IndexManagerTask.FILE_FINISHED_OK);
                         break;
                 }
             } finally {
-                if(task.task != IndexManagerTask.FILE_FINISHED_FAIL || task.task != IndexManagerTask.FILE_FINISHED_OK) {
+                if(task.task != IndexManagerTask.FILE_FINISHED_FAIL && task.task != IndexManagerTask.FILE_FINISHED_OK) {
                     if(task.task == IndexManagerTask.ADD_WORD)
                         wordsSemaphore.release();
                     else

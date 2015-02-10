@@ -1,5 +1,7 @@
 package com.github.kassak.indexer.utils;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.util.concurrent.TimeUnit;
 
 public abstract class ThreadService implements IService, Runnable {
@@ -24,7 +26,7 @@ public abstract class ThreadService implements IService, Runnable {
     }
 
     @Override
-    public boolean waitFinished(long timeout, TimeUnit unit) throws InterruptedException {
+    public boolean waitFinished(long timeout, @NotNull TimeUnit unit) throws InterruptedException {
         thread.join(unit.toMillis(timeout));
         return !isRunning();
     }

@@ -1,5 +1,8 @@
 package com.github.kassak.indexer;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import java.nio.file.Path;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -13,7 +16,7 @@ class IndexManagerTask implements Comparable<IndexManagerTask> {
     static public final int FILE_FINISHED_OK = 6;
     static public final int FILE_FINISHED_FAIL = 7;
 
-    public IndexManagerTask(int task, Path path, String word) {
+    public IndexManagerTask(int task, @NotNull Path path, @Nullable String word) {
         this.task = task;
         this.path = path;
         this.word = word;
@@ -21,7 +24,7 @@ class IndexManagerTask implements Comparable<IndexManagerTask> {
         seqNum = seq.incrementAndGet();
     }
 
-    public IndexManagerTask(int task, Path path, long stamp, String word) {
+    public IndexManagerTask(int task, @NotNull Path path, long stamp, @Nullable String word) {
         this.task = task;
         this.path = path;
         this.word = word;
@@ -30,7 +33,7 @@ class IndexManagerTask implements Comparable<IndexManagerTask> {
     }
 
     @Override
-    public int compareTo(IndexManagerTask o) {
+    public int compareTo(@NotNull IndexManagerTask o) {
         if(seqNum == o.seqNum)
             return 0;
         int tg1 = taskGroup(task);
