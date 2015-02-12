@@ -13,6 +13,9 @@ task fatJar(type: Jar) {
     baseName = project.name + '-all'
     from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
     with jar
+    manifest {
+        attributes("Main-Class": "com.github.kassak.indexer.app.IndexerApp")
+    }
 }
 
 repositories {
