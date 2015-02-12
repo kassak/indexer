@@ -5,8 +5,8 @@ import org.jetbrains.annotations.NotNull;
 import java.io.Reader;
 import java.util.Scanner;
 
-class SeparatorTokenizer implements ITokenizer {
-    SeparatorTokenizer(@NotNull Reader r, @NotNull String delim) {
+public class SeparatorTokenizer implements ITokenizer {
+    public SeparatorTokenizer(@NotNull Reader r, @NotNull String delim) {
         scanner = new Scanner(r);
         scanner.useDelimiter(delim);
         advance();

@@ -10,12 +10,13 @@ import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class IndexProcessor {
+public class IndexProcessor implements IIndexProcessor {
 
     public IndexProcessor(@NotNull IIndexManager im) {
         indexManager = im;
         index = new IndexStorage();
     }
+    @Override
     public void syncFile(long stamp, @NotNull Path file) {
         if(log.isLoggable(Level.FINE))
             log.fine("Syncing file " + file);
@@ -32,6 +33,7 @@ public class IndexProcessor {
         processFile(file);
     }
 
+    @Override
     public void syncDirectory(final long stamp, @NotNull Path file) {
         if(log.isLoggable(Level.FINE))
             log.fine("Syncing directory " + file);
@@ -65,10 +67,12 @@ public class IndexProcessor {
         index.removeNonexistent(file);
     }
 
+    @Override
     public void removeFile(long stamp, @NotNull Path file) {
         index.removeFile(file);
     }
 
+    @Override
     public void removeDirectory(long stamp, @NotNull Path file) {
         index.removeDirectory(file);
     }
@@ -79,6 +83,7 @@ public class IndexProcessor {
         indexManager.processFile(file);
     }
 
+    @Override
     public void fileFinished(long stamp, @NotNull Path file, boolean b) {
         String sfile = file.toString();
         if(log.isLoggable(Level.FINE))
@@ -103,20 +108,24 @@ public class IndexProcessor {
         }
     }
 
+    @Override
     public void removeWords(long stamp, @NotNull Path file) {
         index.removeWords(file);
     }
 
+    @Override
     public void addWord(long stamp, @NotNull Path file, String word) {
         index.addWord(file, word);
     }
 
 
+    @Override
     @NotNull
     public List<Map.Entry<String, Integer>> getFiles() {
         return index.getFileNames();
     }
 
+    @Override
     @NotNull
     public Collection<FileEntry> search(String word) {
         return index.search(word);

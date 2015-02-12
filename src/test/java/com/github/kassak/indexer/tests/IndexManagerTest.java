@@ -2,7 +2,9 @@ package com.github.kassak.indexer.tests;
 
 import com.github.kassak.indexer.IIndexManager;
 import com.github.kassak.indexer.IndexManager;
-import com.github.kassak.indexer.tokenizing.WhitespaceTokenizerFactory;
+import com.github.kassak.indexer.storage.factories.IndexProcessorFactory;
+import com.github.kassak.indexer.tokenizing.factories.FilesProcessorFactory;
+import com.github.kassak.indexer.tokenizing.factories.WhitespaceTokenizerFactory;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -25,7 +27,8 @@ public class IndexManagerTest {
 
     @Test
     public void  processing() throws InterruptedException {
-        IIndexManager im = new IndexManager(new WhitespaceTokenizerFactory(), 10, 10, 100);
+        IIndexManager im = new IndexManager(new WhitespaceTokenizerFactory()
+                , new FilesProcessorFactory(10, 100), new IndexProcessorFactory(), 100);
         try {
             im.startService();
         } catch (Exception e) {

@@ -1,8 +1,9 @@
 package com.github.kassak.indexer;
 
 import com.github.kassak.indexer.storage.FileEntry;
-import com.github.kassak.indexer.tokenizing.ITokenizerFactory;
-import com.github.kassak.indexer.tokenizing.WhitespaceTokenizerFactory;
+import com.github.kassak.indexer.tokenizing.factories.AlphanumTokenizerFactory;
+import com.github.kassak.indexer.tokenizing.factories.ITokenizerFactory;
+import com.github.kassak.indexer.tokenizing.factories.WhitespaceTokenizerFactory;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -22,7 +23,7 @@ public class IndexerApp {
         }
 
 
-        ITokenizerFactory tf = new WhitespaceTokenizerFactory();
+        ITokenizerFactory tf = new AlphanumTokenizerFactory();
         Indexer indexer = new Indexer(tf, 10, 100, 10, 100);
         try(Scanner ins = new Scanner(System.in)) {
             indexer.startService();

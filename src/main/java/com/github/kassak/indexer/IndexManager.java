@@ -1,11 +1,14 @@
 package com.github.kassak.indexer;
 
 import com.github.kassak.indexer.storage.FileEntry;
+import com.github.kassak.indexer.storage.IIndexProcessor;
 import com.github.kassak.indexer.storage.IndexProcessor;
+import com.github.kassak.indexer.storage.factories.IIndexProcessorFactory;
 import com.github.kassak.indexer.tokenizing.FilesProcessor;
 import com.github.kassak.indexer.tokenizing.IFilesProcessor;
 import com.github.kassak.indexer.tokenizing.ITokenizer;
-import com.github.kassak.indexer.tokenizing.ITokenizerFactory;
+import com.github.kassak.indexer.tokenizing.factories.IFilesProcessorFactory;
+import com.github.kassak.indexer.tokenizing.factories.ITokenizerFactory;
 import com.github.kassak.indexer.utils.Services;
 import com.github.kassak.indexer.utils.ThreadService;
 import org.jetbrains.annotations.NotNull;
@@ -18,13 +21,15 @@ import java.util.concurrent.*;
 
 public class IndexManager extends ThreadService implements IIndexManager {
 
-    public IndexManager(@NotNull ITokenizerFactory tf, int queueSize, int fileThreads, int fileQueueSize) {
+    public IndexManager(@NotNull ITokenizerFactory tf, @NotNull IFilesProcessorFactory fpf
+            , @NotNull IIndexProcessorFactory ipf, int queueSize) {
         tasks = new PriorityBlockingQueue<>();
+        this.queueSize = queueSize;
         tasksSemaphore = new Semaphore(queueSize);
         wordsSemaphore = new Semaphore(queueSize);
         filesQueue = new ConcurrentLinkedDeque<>();
-        filesProcessor = new FilesProcessor(this, fileThreads, fileQueueSize);
-        indexProcessor = new IndexProcessor(this);
+        filesProcessor = fpf.create(this);
+        indexProcessor = ipf.create(this);
         tokenizerFactory = tf;
     }
 
@@ -58,17 +63,35 @@ public class IndexManager extends ThreadService implements IIndexManager {
 
     @Override
     public void removeFromIndex(@NotNull Path file) throws InterruptedException {
-        tasksSemaphore.acquire();
+        wordsSemaphore.acquire();
         tasks.put(new IndexManagerTask(IndexManagerTask.REMOVE_WORDS, file, null));
     }
 
     private void tryProcessFiles() {
+        boolean processed = false;
         while(!filesQueue.isEmpty()) {
             Path next = filesQueue.pollFirst();
             if(next != null)
                 if(!filesProcessor.processFile(next)) {
                     filesQueue.addFirst(next);
                     break;
+                }
+                else
+                    processed = true;
+        }
+        if(processed)
+            synchronized (filesQueue) {
+                filesQueue.notifyAll();
+            }
+    }
+
+    private void waitForGoodEnoughQueue() {
+        synchronized (filesQueue) {
+            while (filesQueue.size() > queueSize)
+                try {
+                    filesQueue.wait();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
                 }
         }
     }
@@ -87,12 +110,14 @@ public class IndexManager extends ThreadService implements IIndexManager {
     @Override
     public void syncFile(@NotNull Path file) throws InterruptedException {
         tasksSemaphore.acquire();
+        waitForGoodEnoughQueue();
         tasks.put(new IndexManagerTask(IndexManagerTask.SYNC_FILE, file, null));
     }
 
     @Override
     public void syncDirectory(@NotNull Path file) throws InterruptedException {
         tasksSemaphore.acquire();
+        waitForGoodEnoughQueue();
         tasks.put(new IndexManagerTask(IndexManagerTask.SYNC_DIR, file, null));
     }
 
@@ -116,9 +141,8 @@ public class IndexManager extends ThreadService implements IIndexManager {
 
     @Override
     public void processFile(@NotNull Path file){
-        if(!filesProcessor.processFile(file)) {
-            filesQueue.add(file);
-        }
+        filesQueue.add(file);
+        tryProcessFiles();
     }
 
     @Override
@@ -157,7 +181,7 @@ public class IndexManager extends ThreadService implements IIndexManager {
                 }
             } finally {
                 if(task.task != IndexManagerTask.FILE_FINISHED_FAIL && task.task != IndexManagerTask.FILE_FINISHED_OK) {
-                    if(task.task == IndexManagerTask.ADD_WORD)
+                    if(task.task == IndexManagerTask.ADD_WORD || task.task == IndexManagerTask.REMOVE_WORDS)
                         wordsSemaphore.release();
                     else
                         tasksSemaphore.release();
@@ -166,7 +190,8 @@ public class IndexManager extends ThreadService implements IIndexManager {
         }
     }
 
-    private final IndexProcessor indexProcessor;
+    private final long queueSize;
+    private final IIndexProcessor indexProcessor;
     private final BlockingQueue<IndexManagerTask> tasks;
     private final Semaphore tasksSemaphore;
     private final Semaphore wordsSemaphore;

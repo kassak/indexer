@@ -45,6 +45,8 @@ class IndexManagerTask implements Comparable<IndexManagerTask> {
 
     private static int taskGroup(int taskId) {
         if(taskId == FILE_FINISHED_FAIL || taskId == FILE_FINISHED_OK)
+            return 2;
+        if(taskId == ADD_WORD || taskId == REMOVE_WORDS)
             return 1;
         return 0;
     }
