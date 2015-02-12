@@ -8,13 +8,37 @@ import com.github.kassak.indexer.tokenizing.factories.AlphanumTokenizerFactory;
 import com.github.kassak.indexer.tokenizing.factories.ITokenizerFactory;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.*;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.*;
+import java.lang.reflect.Constructor;
 
 public class IndexerApp {
+    private static class Config {
+        public Config(String file) throws IOException, FileNotFoundException {
+            Properties prop = new Properties();
+            InputStream input = new FileInputStream(file);
+ 
+            prop.load(input);
+            tokenizerFactoryClass = prop.getProperty("tokenizerFactoryClass", AlphanumTokenizerFactory.class.getName());
+            parserThreadsNum = Integer.parseInt(prop.getProperty("parserThreadsNum", "3"));
+            parserQueueSize = Integer.parseInt(prop.getProperty("parserQueueSize", "10"));
+            registrationQueueSize = Integer.parseInt(prop.getProperty("registrationQueueSize", "10"));
+            internalQueueSize = Integer.parseInt(prop.getProperty("internalQueueSize", "100"));
+        }
+        
+        public final String tokenizerFactoryClass;
+        public final int parserThreadsNum;
+        public final int parserQueueSize;
+        public final int registrationQueueSize;
+        public final int internalQueueSize;
+    }
     private static void help() {
         System.out.println("?\t--\thelp");
         System.out.println("a\t--\tadd file");
@@ -121,6 +145,23 @@ public class IndexerApp {
     }
 
     public static void main(String[] argv) {
+        if(argv.length != 1) {
+            System.err.println("First argument should be config file path.");
+            return;
+        }
+        final Config c;
+        final ITokenizerFactory tf;
+        try {
+            c = new Config(argv[0]);
+            Class<?> clazz = Class.forName(c.tokenizerFactoryClass);
+            Constructor<?> ctor = clazz.getConstructor();
+            tf = (ITokenizerFactory)ctor.newInstance();
+        } catch(Exception e) {
+            e.printStackTrace();
+            System.err.println("Failed to configure.");
+            return;
+        }
+
         Handler handler = new ConsoleHandler();
         handler.setLevel(Level.OFF);
         {
@@ -129,9 +170,14 @@ public class IndexerApp {
             topLogger.addHandler(handler);
         }
 
-
-        ITokenizerFactory tf = new AlphanumTokenizerFactory();
-        Indexer indexer = new Indexer(tf, 10, 100, 10, 100);
+        System.out.println("Current configuration:");
+        System.out.println("\tTokenizer factory: " + c.tokenizerFactoryClass);
+        System.out.println("\tNumber of parser threads: " + c.parserThreadsNum);
+        System.out.println("\tParser queue size: " + c.parserQueueSize);
+        System.out.println("\tInternal queue size: " + c.internalQueueSize);
+        System.out.println("\tRegistration queue size: " + c.registrationQueueSize);
+        
+        Indexer indexer = new Indexer(tf, c.registrationQueueSize, c.internalQueueSize, c.parserThreadsNum, c.parserQueueSize);
         try(Scanner ins = new Scanner(System.in)) {
             indexer.startService();
             while(true) {

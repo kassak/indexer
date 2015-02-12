@@ -20,8 +20,8 @@ import java.util.concurrent.TimeUnit;
 
 public class Indexer implements IService {
     public Indexer(ITokenizerFactory tf, int regQueueSize, int queueSize, int fileThreads, int fileQueueSize) {
-        IndexManagerService im = new IndexManagerService(tf, new FilesProcessorServiceFactory(queueSize, fileThreads)
-                , new IndexProcessorFactory(), fileQueueSize);
+        IndexManagerService im = new IndexManagerService(tf, new FilesProcessorServiceFactory(fileThreads, fileQueueSize)
+                , new IndexProcessorFactory(), queueSize);
         indexManager = im;
         fsWatcher = new FSWatcherService(im, regQueueSize);
     }
