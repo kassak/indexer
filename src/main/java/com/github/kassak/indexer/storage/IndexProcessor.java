@@ -23,12 +23,12 @@ public class IndexProcessor implements IIndexProcessor {
         IndexedFile f = index.getOrAddFile(file, stamp);
         assert(f.stamp <= stamp); //this is guaranteed
         f.stamp = stamp;
-        if(f.state == IndexedFile.PROCESSING) {//already processing
+        if(f.state == States.PROCESSING) {//already processing
             if(log.isLoggable(Level.FINE))
                 log.fine("Already processing " + file);
             return;
         }
-        f.state = IndexedFile.PROCESSING;
+        f.state = States.PROCESSING;
         f.processingStamp = stamp;
         processFile(file);
     }
@@ -93,18 +93,18 @@ public class IndexProcessor implements IIndexProcessor {
             log.warning("Finished processing removed file " + sfile);
             return;
         }
-        assert(f.state == IndexedFile.PROCESSING && f.processingStamp <= stamp); //NOTE: how couldn't it be?
+        assert(f.state == States.PROCESSING && f.processingStamp <= stamp); //NOTE: how couldn't it be?
         if(f.stamp > stamp) { //modified while processing
             if(log.isLoggable(Level.FINE))
                 log.fine("File was modified while processing. Doing it again " + sfile);
             f.processingStamp = f.stamp;
-            f.state = IndexedFile.PROCESSING;
+            f.state = States.PROCESSING;
             processFile(file);
         }
         else {
             f.stamp = stamp;
             f.processingStamp = stamp;
-            f.state = (b ? IndexedFile.VALID : IndexedFile.INVALID); //TODO: do we need to retry on invalid?
+            f.state = (b ? States.VALID : States.INVALID); //TODO: do we need to retry on invalid?
         }
     }
 
@@ -121,7 +121,7 @@ public class IndexProcessor implements IIndexProcessor {
 
     @Override
     @NotNull
-    public List<Map.Entry<String, Integer>> getFiles() {
+    public List<FileStatistics> getFiles() {
         return index.getFileNames();
     }
 

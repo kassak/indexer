@@ -2,6 +2,8 @@ package com.github.kassak.indexer.app;
 
 import com.github.kassak.indexer.Indexer;
 import com.github.kassak.indexer.storage.FileEntry;
+import com.github.kassak.indexer.storage.FileStatistics;
+import com.github.kassak.indexer.storage.States;
 import com.github.kassak.indexer.tokenizing.factories.AlphanumTokenizerFactory;
 import com.github.kassak.indexer.tokenizing.factories.ITokenizerFactory;
 import org.jetbrains.annotations.NotNull;
@@ -85,22 +87,37 @@ public class IndexerApp {
     }
 
     private static void listFiles(Indexer indexer) {
-        List<Map.Entry<String, Integer>> res = indexer.getFiles();
-        Collections.sort(res, new Comparator<Map.Entry<String, Integer>>() {
+        List<FileStatistics> res = indexer.getFiles();
+        Collections.sort(res, new Comparator<FileStatistics>() {
             @Override
-            public int compare(@NotNull Map.Entry<String, Integer> o1, @NotNull Map.Entry<String, Integer> o2) {
-                return o1.getKey().compareTo(o2.getKey());
+            public int compare(@NotNull FileStatistics o1, @NotNull FileStatistics o2) {
+                return o1.name.compareTo(o2.name);
             }
         });
         System.out.println("--------begin---------");
-        long cnt = 0;
-        for(Map.Entry<String, Integer> s : res) {
-            System.out.println(s.getKey() + " : " + s.getValue());
-            if(s.getValue() != 0)
-                ++cnt;
+        long ne_cnt = 0;
+        long inval_cnt = 0;
+        long val_cnt = 0;
+        long proc_cnt = 0;
+        for(FileStatistics s : res) {
+            String prefix = "";
+            if(s.state == States.INVALID) {
+                ++inval_cnt;
+                prefix = " - ";
+            } else if(s.state == States.PROCESSING) {
+                ++proc_cnt;
+                prefix = " * ";
+            } else if(s.state == States.VALID) {
+                ++val_cnt;
+                prefix = " + ";
+            }
+            System.out.println(prefix + " " + s.name + " : " + s.wordsNum);
+            if(s.wordsNum != 0)
+                ++ne_cnt;
         }
         System.out.println("---------end----------");
-        System.out.println("Files: " + res.size() + ", non empty: " + cnt);
+        System.out.println("Files: " + res.size() + ", non empty: " + ne_cnt
+                           + ", valid: " + val_cnt + ", processing: " + proc_cnt + ", invalid: " + inval_cnt);
     }
 
     public static void main(String[] argv) {

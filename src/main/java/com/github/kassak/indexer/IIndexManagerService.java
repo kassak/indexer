@@ -1,6 +1,7 @@
 package com.github.kassak.indexer;
 
 import com.github.kassak.indexer.storage.FileEntry;
+import com.github.kassak.indexer.storage.FileStatistics;
 import com.github.kassak.indexer.utils.IService;
 import org.jetbrains.annotations.NotNull;
 
@@ -12,5 +13,5 @@ public interface IIndexManagerService extends IService {
     @NotNull
     public Collection<FileEntry> search(@NotNull String word);
     @NotNull
-    public List<Map.Entry<String, Integer>> getFiles() ;
+    public List<FileStatistics> getFiles() ;
 }

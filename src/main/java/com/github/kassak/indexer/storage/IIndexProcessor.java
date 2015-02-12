@@ -18,7 +18,7 @@ public interface IIndexProcessor {
     void addWord(@NotNull Path file, String word);
 
     @NotNull
-    List<Map.Entry<String, Integer>> getFiles();
+    List<FileStatistics> getFiles();
     @NotNull
     Collection<FileEntry> search(String word);
 }

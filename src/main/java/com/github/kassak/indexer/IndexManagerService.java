@@ -3,6 +3,7 @@ package com.github.kassak.indexer;
 import com.github.kassak.indexer.fs.IFSEventsProcessor;
 import com.github.kassak.indexer.storage.FileEntry;
 import com.github.kassak.indexer.storage.IIndexProcessor;
+import com.github.kassak.indexer.storage.FileStatistics;
 import com.github.kassak.indexer.storage.factories.IIndexProcessorFactory;
 import com.github.kassak.indexer.tokenizing.IFileProcessingResults;
 import com.github.kassak.indexer.tokenizing.IFilesProcessor;
@@ -137,7 +138,7 @@ public class IndexManagerService extends ThreadService
 
     @NotNull
     @Override
-    public List<Map.Entry<String, Integer>> getFiles() {
+    public List<FileStatistics> getFiles() {
         return indexProcessor.getFiles();
     }
 

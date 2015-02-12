@@ -57,7 +57,7 @@ class IndexStorage {
             return Collections.emptyList();
         List<FileEntry> res = new ArrayList<>();
         for(IndexedFileWrapper ifile : iword.files)
-            res.add(new FileEntry(ifile.wrapped.path, ifile.wrapped.state == IndexedFile.VALID));
+            res.add(new FileEntry(ifile.wrapped.path, ifile.wrapped.state == States.VALID));
         return res;
     }
 
@@ -79,10 +79,10 @@ class IndexStorage {
     }
 
     @NotNull
-    public List<Map.Entry<String, Integer>> getFileNames() {
-        List<Map.Entry<String, Integer>> res = new ArrayList<>(files.size());
+    public List<FileStatistics> getFileNames() {
+        List<FileStatistics> res = new ArrayList<>(files.size());
         for(Map.Entry<String, IndexedFileWrapper> f : files.entrySet())
-            res.add(new AbstractMap.SimpleEntry<>(f.getKey(), f.getValue().words.size()));
+            res.add(new FileStatistics(f.getKey(), f.getValue().wrapped.state, f.getValue().words.size()));
         return res;
     }
 

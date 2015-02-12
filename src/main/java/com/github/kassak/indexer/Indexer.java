@@ -3,6 +3,7 @@ package com.github.kassak.indexer;
 import com.github.kassak.indexer.fs.FSWatcherService;
 import com.github.kassak.indexer.fs.IFSWatcherService;
 import com.github.kassak.indexer.storage.FileEntry;
+import com.github.kassak.indexer.storage.FileStatistics;
 import com.github.kassak.indexer.storage.factories.IndexProcessorFactory;
 import com.github.kassak.indexer.tokenizing.factories.FilesProcessorServiceFactory;
 import com.github.kassak.indexer.tokenizing.factories.ITokenizerFactory;
@@ -57,7 +58,7 @@ public class Indexer implements IService {
         return indexManager.search(word);
     }
 
-    public @NotNull List<Map.Entry<String, Integer>> getFiles() {
+    public @NotNull List<FileStatistics> getFiles() {
         return indexManager.getFiles();
     }
 
