@@ -3,16 +3,23 @@ apply plugin: 'java'
 sourceCompatibility = 1.7
 version = '1.0'
 
+jar {
+    manifest {
+        attributes("Main-Class": "com.github.kassak.indexer.app.IndexerApp")
+    }
+}
+
+task fatJar(type: Jar) {
+    baseName = project.name + '-all'
+    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+    with jar
+}
+
 repositories {
     mavenCentral()
 }
 
-sourceSets {
-    app
-}
-
 dependencies {
     compile group: 'com.intellij', name: 'annotations', version: '12.0'
-    appCompile sourceSets.main.output
     testCompile group: 'junit', name: 'junit', version: '4.11'
 }

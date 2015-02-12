@@ -1,5 +1,6 @@
-package com.github.kassak.indexer;
+package com.github.kassak.indexer.app;
 
+import com.github.kassak.indexer.Indexer;
 import com.github.kassak.indexer.storage.FileEntry;
 import com.github.kassak.indexer.tokenizing.factories.AlphanumTokenizerFactory;
 import com.github.kassak.indexer.tokenizing.factories.ITokenizerFactory;

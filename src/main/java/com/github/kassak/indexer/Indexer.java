@@ -18,7 +18,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 public class Indexer implements IService {
-    Indexer(ITokenizerFactory tf, int regQueueSize, int queueSize, int fileThreads, int fileQueueSize) {
+    public Indexer(ITokenizerFactory tf, int regQueueSize, int queueSize, int fileThreads, int fileQueueSize) {
         IndexManagerService im = new IndexManagerService(tf, new FilesProcessorServiceFactory(queueSize, fileThreads)
                 , new IndexProcessorFactory(), fileQueueSize);
         indexManager = im;
@@ -45,15 +45,15 @@ public class Indexer implements IService {
         return Services.waitServicesFinished(timeout, unit, fsWatcher, indexManager);
     }
 
-    void add(@NotNull String path) throws IOException {
+    public void add(@NotNull String path) throws IOException {
         fsWatcher.registerRoot(FileSystems.getDefault().getPath(path));
     }
 
-    void remove(@NotNull String path) throws IOException {
+    public void remove(@NotNull String path) throws IOException {
         fsWatcher.unregisterRoot(FileSystems.getDefault().getPath(path));
     }
 
-    @NotNull Collection<FileEntry> search(@NotNull String word) {
+    public @NotNull Collection<FileEntry> search(@NotNull String word) {
         return indexManager.search(word);
     }
 
