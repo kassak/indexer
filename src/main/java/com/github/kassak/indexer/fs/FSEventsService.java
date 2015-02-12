@@ -16,7 +16,7 @@ import java.util.logging.Logger;
 
 import static java.nio.file.StandardWatchEventKinds.*;
 
-public class FSEventsService extends ThreadService {
+public class FSEventsService extends ThreadService implements IFSWatcherService {
     public FSEventsService(@NotNull IFSEventsProcessor fsProcessor) {
         this.fsProcessor = fsProcessor;
         this.watchKeys = new HashMap<>();

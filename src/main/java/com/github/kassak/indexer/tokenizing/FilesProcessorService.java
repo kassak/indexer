@@ -1,14 +1,13 @@
 package com.github.kassak.indexer.tokenizing;
 
-import com.github.kassak.indexer.IIndexManager;
 import com.github.kassak.indexer.utils.BoundedExecutor;
 import org.jetbrains.annotations.NotNull;
 
 import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
 
-public class FilesProcessor implements IFilesProcessor {
-    public FilesProcessor(@NotNull IIndexManager im, int threadsNum, int queueSize) {
+public class FilesProcessorService implements IFilesProcessorService {
+    public FilesProcessorService(@NotNull IFileProcessingResults im, int threadsNum, int queueSize) {
         indexManager = im;
         this.threadsNum = threadsNum;
         this.queueSize = queueSize;
@@ -47,6 +46,6 @@ public class FilesProcessor implements IFilesProcessor {
     }
 
     private BoundedExecutor executor;
-    private final IIndexManager indexManager;
+    private final IFileProcessingResults indexManager;
     private final int threadsNum, queueSize;
 }

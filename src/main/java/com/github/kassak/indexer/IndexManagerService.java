@@ -1,13 +1,14 @@
 package com.github.kassak.indexer;
 
+import com.github.kassak.indexer.fs.IFSEventsProcessor;
 import com.github.kassak.indexer.storage.FileEntry;
 import com.github.kassak.indexer.storage.IIndexProcessor;
-import com.github.kassak.indexer.storage.IndexProcessor;
 import com.github.kassak.indexer.storage.factories.IIndexProcessorFactory;
-import com.github.kassak.indexer.tokenizing.FilesProcessor;
+import com.github.kassak.indexer.tokenizing.IFileProcessingResults;
 import com.github.kassak.indexer.tokenizing.IFilesProcessor;
+import com.github.kassak.indexer.tokenizing.IFilesProcessorService;
 import com.github.kassak.indexer.tokenizing.ITokenizer;
-import com.github.kassak.indexer.tokenizing.factories.IFilesProcessorFactory;
+import com.github.kassak.indexer.tokenizing.factories.IFilesProcessorServiceFactory;
 import com.github.kassak.indexer.tokenizing.factories.ITokenizerFactory;
 import com.github.kassak.indexer.utils.Services;
 import com.github.kassak.indexer.utils.ThreadService;
@@ -19,9 +20,10 @@ import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.*;
 
-public class IndexManager extends ThreadService implements IIndexManager {
+public class IndexManagerService extends ThreadService
+        implements IIndexManagerService, IFileProcessingResults, IFilesProcessor, IFSEventsProcessor {
 
-    public IndexManager(@NotNull ITokenizerFactory tf, @NotNull IFilesProcessorFactory fpf
+    public IndexManagerService(@NotNull ITokenizerFactory tf, @NotNull IFilesProcessorServiceFactory fpf
             , @NotNull IIndexProcessorFactory ipf, int queueSize) {
         tasks = new PriorityBlockingQueue<>();
         this.queueSize = queueSize;
@@ -108,27 +110,27 @@ public class IndexManager extends ThreadService implements IIndexManager {
     }
 
     @Override
-    public void syncFile(@NotNull Path file) throws InterruptedException {
+    public void onFileChanged(@NotNull Path file) throws InterruptedException {
         tasksSemaphore.acquire();
         waitForGoodEnoughQueue();
         tasks.put(new IndexManagerTask(IndexManagerTask.SYNC_FILE, file, null));
     }
 
     @Override
-    public void syncDirectory(@NotNull Path file) throws InterruptedException {
+    public void onDirectoryChanged(@NotNull Path file) throws InterruptedException {
         tasksSemaphore.acquire();
         waitForGoodEnoughQueue();
         tasks.put(new IndexManagerTask(IndexManagerTask.SYNC_DIR, file, null));
     }
 
     @Override
-    public void removeFile(@NotNull Path file) throws InterruptedException {
+    public void onFileRemoved(@NotNull Path file) throws InterruptedException {
         tasksSemaphore.acquire();
         tasks.put(new IndexManagerTask(IndexManagerTask.DEL_FILE, file, null));
     }
 
     @Override
-    public void removeDirectory(@NotNull Path file) throws InterruptedException {
+    public void onDirectoryRemoved(@NotNull Path file) throws InterruptedException {
         tasksSemaphore.acquire();
         tasks.put(new IndexManagerTask(IndexManagerTask.DEL_DIR, file, null));
     }
@@ -140,9 +142,10 @@ public class IndexManager extends ThreadService implements IIndexManager {
     }
 
     @Override
-    public void processFile(@NotNull Path file){
+    public boolean processFile(@NotNull Path file){
         filesQueue.add(file);
         tryProcessFiles();
+        return true;
     }
 
     @Override
@@ -169,10 +172,10 @@ public class IndexManager extends ThreadService implements IIndexManager {
                         indexProcessor.syncFile(task.stamp, task.path);
                         break;
                     case IndexManagerTask.ADD_WORD:
-                        indexProcessor.addWord(task.stamp, task.path, task.word);
+                        indexProcessor.addWord(task.path, task.word);
                         break;
                     case IndexManagerTask.REMOVE_WORDS:
-                        indexProcessor.removeWords(task.stamp, task.path);
+                        indexProcessor.removeWords(task.path);
                         break;
                     case IndexManagerTask.FILE_FINISHED_OK:
                     case IndexManagerTask.FILE_FINISHED_FAIL:
@@ -197,5 +200,5 @@ public class IndexManager extends ThreadService implements IIndexManager {
     private final Semaphore wordsSemaphore;
     private final Deque<Path> filesQueue;
     private final ITokenizerFactory tokenizerFactory;
-    private final IFilesProcessor filesProcessor;
+    private final IFilesProcessorService filesProcessor;
 }

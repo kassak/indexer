@@ -1,6 +1,6 @@
 package com.github.kassak.indexer.storage;
 
-import com.github.kassak.indexer.*;
+import com.github.kassak.indexer.tokenizing.IFilesProcessor;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
@@ -12,7 +12,7 @@ import java.util.logging.Logger;
 
 public class IndexProcessor implements IIndexProcessor {
 
-    public IndexProcessor(@NotNull IIndexManager im) {
+    public IndexProcessor(@NotNull IFilesProcessor im) {
         indexManager = im;
         index = new IndexStorage();
     }
@@ -109,12 +109,12 @@ public class IndexProcessor implements IIndexProcessor {
     }
 
     @Override
-    public void removeWords(long stamp, @NotNull Path file) {
+    public void removeWords(@NotNull Path file) {
         index.removeWords(file);
     }
 
     @Override
-    public void addWord(long stamp, @NotNull Path file, String word) {
+    public void addWord(@NotNull Path file, String word) {
         index.addWord(file, word);
     }
 
@@ -132,6 +132,6 @@ public class IndexProcessor implements IIndexProcessor {
     }
 
     private final IndexStorage index;
-    private final IIndexManager indexManager;
+    private final IFilesProcessor indexManager;
     private static final Logger log = Logger.getLogger(IndexProcessor.class.getName());
 }
