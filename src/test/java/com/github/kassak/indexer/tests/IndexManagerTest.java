@@ -1,6 +1,5 @@
 package com.github.kassak.indexer.tests;
 
-import com.github.kassak.indexer.IIndexManagerService;
 import com.github.kassak.indexer.IndexManagerService;
 import com.github.kassak.indexer.storage.factories.IndexProcessorFactory;
 import com.github.kassak.indexer.tokenizing.factories.FilesProcessorServiceFactory;

@@ -4,7 +4,6 @@ import com.github.kassak.indexer.Indexer;
 import com.github.kassak.indexer.storage.FileEntry;
 import com.github.kassak.indexer.tokenizing.factories.AlphanumTokenizerFactory;
 import com.github.kassak.indexer.tokenizing.factories.ITokenizerFactory;
-import com.github.kassak.indexer.tokenizing.factories.WhitespaceTokenizerFactory;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -14,7 +13,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class IndexerApp {
-    public static void help() {
+    private static void help() {
         System.out.println("?\t--\thelp");
         System.out.println("a\t--\tadd file");
         System.out.println("r\t--\tremove file");
@@ -24,7 +23,7 @@ public class IndexerApp {
         System.out.println("q\t--\tquit");
     }
 
-    public static void append(Scanner ins, Indexer indexer) {
+    private static void append(Scanner ins, Indexer indexer) {
         System.out.print("path > ");
         System.out.flush();
         try {
@@ -35,7 +34,7 @@ public class IndexerApp {
         }
     }
 
-    public static void remove(Scanner ins, Indexer indexer) {
+    private static void remove(Scanner ins, Indexer indexer) {
         System.out.print("path > ");
         System.out.flush();
         try {
@@ -46,7 +45,7 @@ public class IndexerApp {
         }
     }
 
-    public static void search(Scanner ins, Indexer indexer) {
+    private static void search(Scanner ins, Indexer indexer) {
         System.out.print("word > ");
         System.out.flush();
         try {
@@ -85,7 +84,7 @@ public class IndexerApp {
         System.out.println("Level: " + handler.getLevel());
     }
 
-    public static void listFiles(Indexer indexer) {
+    private static void listFiles(Indexer indexer) {
         List<Map.Entry<String, Integer>> res = indexer.getFiles();
         Collections.sort(res, new Comparator<Map.Entry<String, Integer>>() {
             @Override

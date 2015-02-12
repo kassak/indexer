@@ -10,8 +10,8 @@ import java.util.Map;
 public interface IIndexProcessor {
     void syncFile(long stamp, @NotNull Path file);
     void syncDirectory(long stamp, @NotNull Path file);
-    void removeFile(long stamp, @NotNull Path file);
-    void removeDirectory(long stamp, @NotNull Path file);
+    void removeFile(@NotNull Path file);
+    void removeDirectory(@NotNull Path file);
 
     void fileFinished(long stamp, @NotNull Path file, boolean b);
     void removeWords(@NotNull Path file);

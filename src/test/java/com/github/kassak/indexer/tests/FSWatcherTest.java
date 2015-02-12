@@ -2,7 +2,6 @@ package com.github.kassak.indexer.tests;
 
 import com.github.kassak.indexer.fs.FSEventsService;
 import com.github.kassak.indexer.fs.IFSEventsProcessor;
-import com.github.kassak.indexer.fs.IFSWatcherService;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Test;
@@ -55,8 +54,8 @@ class Collector implements IFSEventsProcessor {
         Assert.assertTrue(false);
     }
 
-    public Set<String> files;
-    public Set<String> dirs;
+    public final Set<String> files;
+    public final Set<String> dirs;
 }
 
 public class FSWatcherTest {

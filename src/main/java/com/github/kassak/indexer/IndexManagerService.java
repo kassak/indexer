@@ -160,10 +160,10 @@ public class IndexManagerService extends ThreadService
             try {
                 switch (task.task) {
                     case IndexManagerTask.DEL_DIR:
-                        indexProcessor.removeDirectory(task.stamp, task.path);
+                        indexProcessor.removeDirectory(task.path);
                         break;
                     case IndexManagerTask.DEL_FILE:
-                        indexProcessor.removeFile(task.stamp, task.path);
+                        indexProcessor.removeFile(task.path);
                         break;
                     case IndexManagerTask.SYNC_DIR:
                         indexProcessor.syncDirectory(task.stamp, task.path);

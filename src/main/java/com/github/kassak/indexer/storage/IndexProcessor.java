@@ -68,12 +68,12 @@ public class IndexProcessor implements IIndexProcessor {
     }
 
     @Override
-    public void removeFile(long stamp, @NotNull Path file) {
+    public void removeFile(@NotNull Path file) {
         index.removeFile(file);
     }
 
     @Override
-    public void removeDirectory(long stamp, @NotNull Path file) {
+    public void removeDirectory(@NotNull Path file) {
         index.removeDirectory(file);
     }
 
