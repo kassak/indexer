@@ -4,7 +4,14 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.concurrent.*;
 
+/**
+    Executor service which can decline execution without throwing exception
+*/
 public class BoundedExecutor {
+    /**
+        @param threadsNum number of threads in pool
+        @param queueSize size of queue
+    */
     public BoundedExecutor(int threadsNum, int queueSize) {
         if(threadsNum > queueSize)
             queueSize = threadsNum;
@@ -13,6 +20,12 @@ public class BoundedExecutor {
         semaphore = new Semaphore(queueSize);
     }
 
+    /**
+        Tries to queue task to beexecuted
+
+        @param command task to execute
+        @return false if queue is full true if queued
+    */
     public boolean tryExecute(@NotNull final Runnable command) {
         if(isShutdown())
             throw new IllegalStateException("Already shut down");
@@ -33,14 +46,29 @@ public class BoundedExecutor {
         }
     }
 
+    /**
+        Shut executor down
+    */
     public void shutdown() {
         executor.shutdown();
     }
 
+    /**
+        Wait for executor termination
+
+        @param timeout number of units to wait
+        @param unit unit of time
+        @return true if terminated before timeout
+        @throws InterruptedException
+    */
     public boolean awaitTermination(long timeout, @NotNull TimeUnit unit) throws InterruptedException {
         return executor.awaitTermination(timeout, unit);
     }
 
+
+    /**
+       @return true if executor is shut down
+    */
     public boolean isShutdown() {
         return executor.isShutdown();
     }

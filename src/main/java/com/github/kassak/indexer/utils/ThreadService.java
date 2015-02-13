@@ -4,6 +4,9 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.concurrent.TimeUnit;
 
+/**
+    Abstract base class for thread-based services
+*/
 public abstract class ThreadService implements IService, Runnable {
     @Override
     public void startService() throws Exception {

@@ -5,6 +5,13 @@ import org.jetbrains.annotations.NotNull;
 import java.util.logging.Logger;
 
 public class Uninterruptible {
+    /**
+        Run interruptible task which should be completed
+
+        @param foo interruptible task
+        @param maxTries number of tries before give up
+        @return true if task was executed, false if gave up
+    */
     public static boolean performUninterruptibly(@NotNull InterruptibleCallable foo, int maxTries) {
         boolean wasInterrupted = false;
         boolean finished = false;
