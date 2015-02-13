@@ -8,7 +8,14 @@ import java.nio.file.Path;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+/**
+    Class that does the job on file processing
+*/
 class FileProcessorUnit implements Runnable {
+    /**
+        @param im reciever of processing results
+        @param f file to process
+    */
     public FileProcessorUnit(@NotNull IFileProcessingResults im, @NotNull Path f) {
         indexManager = im;
         file = f;

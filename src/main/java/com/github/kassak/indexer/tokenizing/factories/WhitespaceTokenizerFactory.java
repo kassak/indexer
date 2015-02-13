@@ -6,6 +6,9 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.Reader;
 
+/**
+    Factory for tokenizers which splits words on whitespaces
+*/
 public class WhitespaceTokenizerFactory implements ITokenizerFactory {
     @NotNull
     @Override

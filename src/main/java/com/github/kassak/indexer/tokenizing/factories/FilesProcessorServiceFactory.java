@@ -5,6 +5,9 @@ import com.github.kassak.indexer.tokenizing.IFileProcessingResults;
 import com.github.kassak.indexer.tokenizing.IFilesProcessorService;
 import org.jetbrains.annotations.NotNull;
 
+/**
+    Standard factory for files processor service
+*/
 public class FilesProcessorServiceFactory implements IFilesProcessorServiceFactory {
     public FilesProcessorServiceFactory(int threadsNum, int queueSize) {
         this.threadsNum = threadsNum;

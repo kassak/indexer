@@ -6,13 +6,26 @@ import org.jetbrains.annotations.NotNull;
 import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
 
+/**
+    Service for queueing files and processing them in multiple threads.
+    When queue is full further processing requests are declined. 
+*/
 public class FilesProcessorService implements IFilesProcessorService {
+    /**
+        @param im reciever of processing results
+        @param threadsNum number of processor threads
+        @param queueSize size of files queue
+    */
     public FilesProcessorService(@NotNull IFileProcessingResults im, int threadsNum, int queueSize) {
         indexManager = im;
         this.threadsNum = threadsNum;
         this.queueSize = queueSize;
     }
 
+    /**
+        Enqueues file for further processing.
+        @return true if file succesfully enqueued false if queue is full
+    */
     @Override
     public boolean processFile(@NotNull Path f) {
         if(!isRunning())

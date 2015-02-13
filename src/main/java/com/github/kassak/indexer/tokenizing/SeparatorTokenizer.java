@@ -5,7 +5,14 @@ import org.jetbrains.annotations.NotNull;
 import java.io.Reader;
 import java.util.Scanner;
 
+/**
+    Tokenizer which splits by specified separator
+*/
 public class SeparatorTokenizer implements ITokenizer {
+    /**
+        @param r reader to tokenize
+        @param delim pattern for words separator
+    */
     public SeparatorTokenizer(@NotNull Reader r, @NotNull String delim) {
         scanner = new Scanner(r);
         scanner.useDelimiter(delim);
