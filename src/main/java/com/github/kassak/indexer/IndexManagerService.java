@@ -62,16 +62,17 @@ public class IndexManagerService extends ThreadService
     public void addWordToIndex(@NotNull Path file, @NotNull String word) throws InterruptedException {
         wordsSemaphore.acquire();
         tasks.put(new IndexManagerTask(IndexManagerTask.ADD_WORD, file, word));
+        notifyTasks();
     }
 
     @Override
     public void removeFromIndex(@NotNull Path file) throws InterruptedException {
         wordsSemaphore.acquire();
         tasks.put(new IndexManagerTask(IndexManagerTask.REMOVE_WORDS, file, null));
+        notifyTasks();
     }
 
     private void tryProcessFiles() {
-        boolean processed = false;
         while(!filesQueue.isEmpty()) {
             Path next = filesQueue.pollFirst();
             if(next != null)
@@ -79,23 +80,12 @@ public class IndexManagerService extends ThreadService
                     filesQueue.addFirst(next);
                     break;
                 }
-                else
-                    processed = true;
         }
-        if(processed)
-            synchronized (filesQueue) {
-                filesQueue.notifyAll();
-            }
     }
 
-    private void waitForGoodEnoughQueue() {
-        synchronized (filesQueue) {
-            while (filesQueue.size() > queueSize)
-                try {
-                    filesQueue.wait();
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                }
+    private void notifyTasks() {
+        synchronized (tasks){
+            tasks.notifyAll();
         }
     }
 
@@ -103,6 +93,7 @@ public class IndexManagerService extends ThreadService
     public void submitFinishedProcessing(@NotNull Path file, long stamp, boolean valid) throws InterruptedException {
         tasks.put(new IndexManagerTask(valid ? IndexManagerTask.FILE_FINISHED_OK : IndexManagerTask.FILE_FINISHED_FAIL, file, stamp, null));
         tryProcessFiles();
+        notifyTasks();
     }
 
     @Override
@@ -113,14 +104,12 @@ public class IndexManagerService extends ThreadService
     @Override
     public void onFileChanged(@NotNull Path file) throws InterruptedException {
         tasksSemaphore.acquire();
-        waitForGoodEnoughQueue();
         tasks.put(new IndexManagerTask(IndexManagerTask.SYNC_FILE, file, null));
     }
 
     @Override
     public void onDirectoryChanged(@NotNull Path file) throws InterruptedException {
         tasksSemaphore.acquire();
-        waitForGoodEnoughQueue();
         tasks.put(new IndexManagerTask(IndexManagerTask.SYNC_DIR, file, null));
     }
 
@@ -149,12 +138,30 @@ public class IndexManagerService extends ThreadService
         return true;
     }
 
+    private IndexManagerTask extractRightPriorityTask() throws InterruptedException {
+        if (filesQueue.size() < queueSize)
+            return tasks.take();
+        while(true) {
+            IndexManagerTask task = tasks.take();
+            synchronized(tasks) {
+                if(IndexManagerTask.isProcessingTask(task.task) || filesQueue.size() < queueSize) {
+                    return task;
+                }
+                tasks.add(task);
+                if(IndexManagerTask.isProcessingTask(tasks.peek().task) || filesQueue.size() < queueSize) {
+                    return tasks.remove();
+                }
+                tasks.wait();
+            }
+        }
+    }
+
     @Override
     public void run() {
         while(!Thread.interrupted()) {
             IndexManagerTask task;
             try {
-                task = tasks.take();
+                task = extractRightPriorityTask();
             } catch (InterruptedException e) {
                 break;
             }

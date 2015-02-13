@@ -40,7 +40,7 @@ class IndexManagerTask implements Comparable<IndexManagerTask> {
         int tg2 = taskGroup(o.task);
         if(tg1 == tg2)
             return seqNum < o.seqNum ? -1 : 1;
-        return tg1 < tg2 ? -1 : 1;
+        return tg1 > tg2 ? -1 : 1;
     }
 
     private static int taskGroup(int taskId) {
@@ -49,6 +49,10 @@ class IndexManagerTask implements Comparable<IndexManagerTask> {
         if(taskId == ADD_WORD || taskId == REMOVE_WORDS)
             return 1;
         return 0;
+    }
+
+    public static boolean isProcessingTask(int taskId) {
+        return taskGroup(taskId) != 0;
     }
 
     public final int task;
