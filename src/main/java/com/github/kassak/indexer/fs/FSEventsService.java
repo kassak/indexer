@@ -16,7 +16,15 @@ import java.util.logging.Logger;
 
 import static java.nio.file.StandardWatchEventKinds.*;
 
+/**
+    Filesystem watcher. Producer of events. Big.
+*/
 public class FSEventsService extends ThreadService implements IFSWatcherService {
+    /**
+        Creates new events service with specified processor
+
+        @param fsProcessor processor of filesystem events
+    */
     public FSEventsService(@NotNull IFSEventsProcessor fsProcessor) {
         this.fsProcessor = fsProcessor;
         this.watchKeys = new HashMap<>();
@@ -421,9 +429,7 @@ public class FSEventsService extends ThreadService implements IFSWatcherService 
     }
     private WatchService watcher;
     private final IFSEventsProcessor fsProcessor;
-    @NotNull
     private final Map<String, WatchKey> watchKeys;
-    @NotNull
     private final Map<String, Set<String>> watchFilters;
     private static final Logger log = Logger.getLogger(FSEventsService.class.getName());
 }

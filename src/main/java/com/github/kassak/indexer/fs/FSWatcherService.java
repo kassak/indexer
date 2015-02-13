@@ -11,7 +11,17 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+/**
+    Service which performs registration of root to events service in
+    separate thread.
+*/
 public class FSWatcherService extends ThreadService implements IFSWatcherService {
+    /**
+        Creates new service
+
+        @param processor filesystem events processot
+        @param queueSize size of registration queue
+    */
     public FSWatcherService(@NotNull IFSEventsProcessor processor, int queueSize) {
         queue = new ArrayBlockingQueue<WatcherRegistrationTask>(queueSize);
         eventsService = new FSEventsService(processor);
