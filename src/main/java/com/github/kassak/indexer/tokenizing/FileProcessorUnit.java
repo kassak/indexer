@@ -13,7 +13,7 @@ import java.util.logging.Logger;
 */
 class FileProcessorUnit implements Runnable {
     /**
-        @param im reciever of processing results
+        @param im receiver of processing results
         @param f file to process
     */
     public FileProcessorUnit(@NotNull IFileProcessingResults im, @NotNull Path f) {

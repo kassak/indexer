@@ -12,7 +12,7 @@ public interface IFilesProcessorServiceFactory {
     /**
         Create new files processor service with specified results sink.
 
-        @param im reciever of processing result
+        @param im receiver of processing result
         @return files processor service
     */
     public @NotNull IFilesProcessorService create(@NotNull IFileProcessingResults im);

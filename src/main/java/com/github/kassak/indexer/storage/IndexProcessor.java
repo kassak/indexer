@@ -121,7 +121,7 @@ public class IndexProcessor implements IIndexProcessor {
     }
 
     @Override
-    public void addWord(@NotNull Path file, String word) {
+    public void addWord(@NotNull Path file, @NotNull String word) {
         index.addWord(file, word);
     }
 
@@ -134,7 +134,7 @@ public class IndexProcessor implements IIndexProcessor {
 
     @Override
     @NotNull
-    public Collection<FileEntry> search(String word) {
+    public Collection<FileEntry> search(@NotNull String word) {
         return index.search(word);
     }
 

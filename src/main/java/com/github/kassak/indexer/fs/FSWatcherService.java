@@ -19,7 +19,7 @@ public class FSWatcherService extends ThreadService implements IFSWatcherService
     /**
         Creates new service
 
-        @param processor filesystem events processot
+        @param processor filesystem events processor
         @param queueSize size of registration queue
     */
     public FSWatcherService(@NotNull IFSEventsProcessor processor, int queueSize) {

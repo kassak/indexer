@@ -12,7 +12,7 @@ import java.util.concurrent.TimeUnit;
 */
 public class FilesProcessorService implements IFilesProcessorService {
     /**
-        @param im reciever of processing results
+        @param im receiver of processing results
         @param threadsNum number of processor threads
         @param queueSize size of files queue
     */
@@ -24,7 +24,7 @@ public class FilesProcessorService implements IFilesProcessorService {
 
     /**
         Enqueues file for further processing.
-        @return true if file succesfully enqueued false if queue is full
+        @return true if file successfully enqueued false if queue is full
     */
     @Override
     public boolean processFile(@NotNull Path f) {

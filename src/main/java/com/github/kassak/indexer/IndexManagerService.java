@@ -173,6 +173,7 @@ public class IndexManagerService extends ThreadService
                         indexProcessor.syncFile(task.stamp, task.path);
                         break;
                     case IndexManagerTask.ADD_WORD:
+                        assert task.word != null;
                         indexProcessor.addWord(task.path, task.word);
                         break;
                     case IndexManagerTask.REMOVE_WORDS:

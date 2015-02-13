@@ -21,7 +21,7 @@ public class BoundedExecutor {
     }
 
     /**
-        Tries to queue task to beexecuted
+        Tries to queue task to be executed
 
         @param command task to execute
         @return false if queue is full true if queued

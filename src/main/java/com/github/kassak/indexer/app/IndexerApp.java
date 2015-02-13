@@ -10,7 +10,6 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Handler;
@@ -21,7 +20,7 @@ import java.lang.reflect.Constructor;
 
 public class IndexerApp {
     private static class Config {
-        public Config(String file) throws IOException, FileNotFoundException {
+        public Config(String file) throws IOException {
             Properties prop = new Properties();
             InputStream input = new FileInputStream(file);
  
