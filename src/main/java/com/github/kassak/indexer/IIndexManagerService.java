@@ -9,6 +9,9 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
+/**
+    Interface for index manager
+*/
 public interface IIndexManagerService extends IService {
     @NotNull
     public Collection<FileEntry> search(@NotNull String word);

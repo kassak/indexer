@@ -10,8 +10,15 @@ import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+/**
+    Standard implementation of index processor
+*/
 public class IndexProcessor implements IIndexProcessor {
+    /**
+        Creates new index processor
 
+        @param im processor of files
+    */
     public IndexProcessor(@NotNull IFilesProcessor im) {
         indexManager = im;
         index = new IndexStorage();
