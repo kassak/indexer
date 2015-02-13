@@ -9,6 +9,6 @@ import java.io.Reader;
 public class AlphanumTokenizerFactory implements ITokenizerFactory {
     @Override
     public @NotNull ITokenizer create(@NotNull Reader r) {
-        return new SeparatorTokenizer(r, "\\W");
+        return new SeparatorTokenizer(r, "[^\\p{IsAlphabetic}\\p{IsDigit}]");
     }
 }
