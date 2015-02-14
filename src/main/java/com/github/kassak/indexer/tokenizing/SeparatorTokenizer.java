@@ -2,7 +2,9 @@ package com.github.kassak.indexer.tokenizing;
 
 import org.jetbrains.annotations.NotNull;
 
-import java.io.Reader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.nio.file.Path;
 import java.util.Scanner;
 
 /**
@@ -10,11 +12,11 @@ import java.util.Scanner;
 */
 public class SeparatorTokenizer implements ITokenizer {
     /**
-        @param r reader to tokenize
+        @param path file to tokenize
         @param delim pattern for words separator
     */
-    public SeparatorTokenizer(@NotNull Reader r, @NotNull String delim) {
-        scanner = new Scanner(r);
+    public SeparatorTokenizer(@NotNull Path path, @NotNull String delim) throws FileNotFoundException {
+        scanner = new Scanner(new FileReader(path.toFile()));
         scanner.useDelimiter(delim);
         advance();
     }

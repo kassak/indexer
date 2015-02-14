@@ -95,7 +95,7 @@ public class FSWatcherService implements Runnable, IService {
     }
 
     private final BlockingQueue<FutureTask<Void>> queue;
-    private final FSEventsService eventsService;
+    private final IFSWatcherService eventsService;
     private final ThreadService currentService;
     private volatile boolean running;
     private final Logger log = Logger.getLogger(FSWatcherService.class.getName());

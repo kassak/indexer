@@ -1,8 +1,9 @@
 package com.github.kassak.indexer.tokenizing;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.nio.file.Path;
 
 /**
@@ -39,8 +40,8 @@ public interface IFileProcessingResults {
     /**
         Create tokenizer for file
 
-        @param file file to be tokenized
-        @throws FileNotFoundException if no such file found
+     @return new tokenizer or null no file found
+      * @param file file to be tokenized
     */
-    public @NotNull ITokenizer newTokenizer(@NotNull Path file) throws FileNotFoundException;
+    public @Nullable ITokenizer newTokenizer(@NotNull Path file) throws IOException;
 }

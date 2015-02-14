@@ -2,8 +2,6 @@ package com.github.kassak.indexer.tokenizing;
 
 import org.jetbrains.annotations.NotNull;
 
-import java.io.FileNotFoundException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -29,9 +27,9 @@ class FileProcessorUnit implements Runnable {
         final long stamp = System.currentTimeMillis();
         try {
             indexManager.removeFromIndex(file);
-            if(!Files.exists(file))
-                return;
             try (ITokenizer tok = indexManager.newTokenizer(file)) {
+                if(tok == null)
+                    return;
                 while (!Thread.currentThread().isInterrupted()) {
                     if(!tok.hasNext()) {
                         finished = true;
@@ -40,8 +38,6 @@ class FileProcessorUnit implements Runnable {
                     String word = tok.next();
                     submitWord(word);
                 }
-            } catch (FileNotFoundException e) {
-                log.log(Level.WARNING, "File not found " + file, e);
             } catch (Exception e) {
                 log.log(Level.WARNING, "Failed to close " + file, e);
             }

@@ -14,10 +14,10 @@ import com.github.kassak.indexer.tokenizing.factories.ITokenizerFactory;
 import com.github.kassak.indexer.utils.Services;
 import com.github.kassak.indexer.utils.ThreadService;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
-import java.io.FileNotFoundException;
-import java.io.FileReader;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.*;
@@ -130,8 +130,8 @@ public class IndexManagerService implements Runnable, IIndexManagerService
     }
 
     @Override
-    public @NotNull ITokenizer newTokenizer(@NotNull Path file) throws FileNotFoundException {
-        return tokenizerFactory.create(new FileReader(file.toFile()));
+    public @Nullable ITokenizer newTokenizer(@NotNull Path file) throws IOException {
+        return tokenizerFactory.create(file);
     }
 
     @Override

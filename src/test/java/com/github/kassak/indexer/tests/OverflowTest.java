@@ -1,12 +1,12 @@
 package com.github.kassak.indexer.tests;
 
 import com.github.kassak.indexer.IndexManagerService;
-import com.github.kassak.indexer.fs.IFSEventsProcessor;
 import com.github.kassak.indexer.storage.factories.IndexProcessorFactory;
 import com.github.kassak.indexer.tokenizing.IFileProcessingResults;
 import com.github.kassak.indexer.tokenizing.IFilesProcessorService;
 import com.github.kassak.indexer.tokenizing.factories.IFilesProcessorServiceFactory;
 import com.github.kassak.indexer.tokenizing.factories.WhitespaceTokenizerFactory;
+import com.github.kassak.indexer.utils.IService;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Test;
@@ -62,10 +62,11 @@ public class OverflowTest {
     }
 
     class AngryThread implements Runnable {
-        public AngryThread(IFSEventsProcessor proc) {
+        public AngryThread(IndexManagerService proc, boolean spamFiles) {
             this.proc = proc;
             lastSeen = System.currentTimeMillis();
             finished = false;
+            this.spamFiles = spamFiles;
         }
 
         @Override
@@ -73,7 +74,10 @@ public class OverflowTest {
             try {
                 for(int i = 0; i < 1000000; ++i) {
                     lastSeen = System.currentTimeMillis();
+                    if(spamFiles)
                         proc.onFileChanged(FileSystems.getDefault().getPath("file-" + i));
+                    else
+                        proc.addWordToIndex(FileSystems.getDefault().getPath("file-0"), "blah");
                 }
                 finished = true;
             } catch (InterruptedException e) {
@@ -81,45 +85,50 @@ public class OverflowTest {
         }
         public volatile long lastSeen;
         public volatile boolean finished;
-        private final IFSEventsProcessor proc;
+        private final IndexManagerService proc;
+        private final boolean spamFiles;
     }
 
-    /**
-     * Test that system stops on queue overflow
-     * @throws InterruptedException
-     */
-    @Test
-    public void stopFilesProcessing() throws InterruptedException {
-        IndexManagerService im = new IndexManagerService(new WhitespaceTokenizerFactory()
-                , new DummyFilesProcessorFactory(), new IndexProcessorFactory(), 100);
-        try {
-            im.startService();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        AngryThread t = new AngryThread(im);
-        Thread tt = new Thread(t);
-        tt.start();
+    static boolean isAngryThreadHang(AngryThread at) throws InterruptedException {
         boolean hang = false;
         while (true) {
             long HANG_TIMEOUT = 5000; //5 sec
-            long ls = t.lastSeen;
+            long ls = at.lastSeen;
             long tm = System.currentTimeMillis();
             if(tm - ls > HANG_TIMEOUT) {
-                hang = !t.finished;
-                tt.interrupt();
+                hang = !at.finished;
                 break;
             }
             Thread.sleep(HANG_TIMEOUT - (tm - ls));
         }
-        Assert.assertTrue(hang);
+        return hang;
+    }
 
-        try {
-            im.stopService();
-        } catch (Exception e) {
-            e.printStackTrace();
+    @Test
+    public void stopFilesProcessing() throws InterruptedException, IService.FailureException {
+        IndexManagerService im = new IndexManagerService(new WhitespaceTokenizerFactory()
+                , new DummyFilesProcessorFactory(), new IndexProcessorFactory(), 100);
+        im.startService();
+
+        { // overflow system
+            AngryThread t = new AngryThread(im, true);
+            Thread tt = new Thread(t);
+            tt.start();
+            boolean hang = isAngryThreadHang(t);
+            tt.interrupt();
+            Assert.assertTrue(hang);
         }
+
+        { // check that IndexManagerService still running
+            AngryThread t = new AngryThread(im, false);
+            Thread tt = new Thread(t);
+            tt.start();
+            boolean hang = isAngryThreadHang(t);
+            tt.interrupt();
+            Assert.assertFalse(hang);
+        }
+
+        im.stopService();
         im.waitFinished(10, TimeUnit.SECONDS);
     }
 }
