@@ -2,8 +2,12 @@ package com.github.kassak.indexer.tests;
 
 import com.github.kassak.indexer.fs.FSEventsService;
 import com.github.kassak.indexer.fs.IFSEventsProcessor;
+import com.github.kassak.indexer.tests.util.IndexerTesting;
+import com.github.kassak.indexer.utils.IService;
 import org.jetbrains.annotations.NotNull;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.io.FileWriter;
@@ -67,74 +71,52 @@ public class FSWatcherTest {
         topLogger.addHandler(h);
     }
 
-    void appendToFile(Path file, String s) throws IOException {
+    private void appendToFile(Path file, String s) throws IOException {
         try (Writer w = new FileWriter(file.toString(), true)) {
             w.write(s);
         }
     }
 
-    @Test
-    public void fileRegistering() throws IOException, InterruptedException {
-        Collector c = new Collector();
-        FSEventsService watcher = new FSEventsService(c);
-        try {
-            watcher.startService();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+    private static Path newFile(Path p) throws IOException {
+        Files.createFile(p);
+        p.toFile().deleteOnExit();
+        return p;
+    }
 
-        Path temp = Files.createTempFile("test-", ".txt").toAbsolutePath();
-        temp.toFile().deleteOnExit();
-        Assert.assertTrue(c.files.isEmpty());
-        Assert.assertTrue(c.dirs.isEmpty());
+    private static Path newDir(Path p) throws IOException {
+        Files.createDirectory(p);
+        p.toFile().deleteOnExit();
+        return p;
+    }
 
-        watcher.registerRoot(temp);
+    private static Path addFile(Path dir, String name) throws IOException {
+        Path res = dir.resolve(name);
+        return newFile(res);
+    }
 
-        Assert.assertEquals(c.files.size(), 1);
-        Assert.assertTrue(c.files.contains(temp.toString()));
-        Assert.assertTrue(c.dirs.isEmpty());
+    private static Path addDir(Path dir, String name) throws IOException {
+        Path res = dir.resolve(name);
+        return newDir(res);
+    }
 
-        c.files.clear();
+    private static Path tempDir() throws IOException {
+        Path res = Files.createTempDirectory("test-");
+        res.toFile().deleteOnExit();
+        return res;
+    }
 
-        appendToFile(temp, "blah");
-        Thread.sleep(1000);
+    private Collector c;
+    private FSEventsService watcher;
 
-        Assert.assertEquals(c.files.size(), 1);
-        Assert.assertTrue(c.files.contains(temp.toString()));
-        Assert.assertTrue(c.dirs.isEmpty());
+    @Before
+    public void init() throws IService.FailureException {
+        c = new Collector();
+        watcher = new FSEventsService(c);
+        watcher.startService();
+    }
 
-        c.files.clear();
-
-        appendToFile(temp, "blah");
-        Thread.sleep(1000);
-
-        Assert.assertEquals(c.files.size(), 1);
-        Assert.assertTrue(c.files.contains(temp.toString()));
-        Assert.assertTrue(c.dirs.isEmpty());
-
-        watcher.unregisterRoot(temp);
-
-        Assert.assertTrue(c.files.isEmpty());
-        Assert.assertTrue(c.dirs.isEmpty());
-
-        appendToFile(temp, "blah");
-        Thread.sleep(1000);
-
-        Assert.assertTrue(c.files.isEmpty());
-        Assert.assertTrue(c.dirs.isEmpty());
-
-        watcher.registerRoot(temp);
-
-        Assert.assertEquals(c.files.size(), 1);
-        Assert.assertTrue(c.files.contains(temp.toString()));
-        Assert.assertTrue(c.dirs.isEmpty());
-
-        Files.delete(temp);
-        Thread.sleep(1000);
-
-        Assert.assertTrue(c.files.isEmpty());
-        Assert.assertTrue(c.dirs.isEmpty());
-
+    @After
+    public void deinit() throws InterruptedException {
         try {
             watcher.stopService();
         } catch (Exception e) {
@@ -144,20 +126,105 @@ public class FSWatcherTest {
     }
 
     @Test
+    public void fileRegistering() throws IOException, InterruptedException {
+        Path root = tempDir();
+
+        Path temp = addFile(root, "blah0.txt");
+        Assert.assertTrue(c.files.isEmpty());
+        Assert.assertTrue(c.dirs.isEmpty());
+
+        watcher.registerRoot(temp);
+
+        IndexerTesting.waitIdle(watcher);
+        Assert.assertEquals(c.files.size(), 1);
+        Assert.assertTrue(c.files.contains(temp.toString()));
+        Assert.assertTrue(c.dirs.isEmpty());
+
+        c.files.clear();
+
+        appendToFile(temp, "blah");
+
+        IndexerTesting.waitIdle(watcher);
+        Assert.assertEquals(c.files.size(), 1);
+        Assert.assertTrue(c.files.contains(temp.toString()));
+        Assert.assertTrue(c.dirs.isEmpty());
+
+        c.files.clear();
+    }
+
+    @Test
+    public void fileSiblingFile() throws IOException, InterruptedException {
+        Path root = tempDir();
+        Path temp = addFile(root, "blah0.txt");
+
+        watcher.registerRoot(temp);
+        Path file2 = addFile(root, "blah1.txt");
+
+        IndexerTesting.waitIdle(watcher);
+        Assert.assertEquals(c.files.size(), 1);
+        Assert.assertTrue(c.files.contains(temp.toString()));
+        Assert.assertTrue(c.dirs.isEmpty());
+    }
+
+    @Test
+    public void fileSiblingDir() throws IOException, InterruptedException {
+        Path root = tempDir();
+        Path temp = addFile(root, "blah0.txt");
+
+        watcher.registerRoot(temp);
+        Path tmp_dir = addDir(root, "test_dir");
+        Path tmp_file = addFile(tmp_dir, "blah.txt");
+
+        IndexerTesting.waitIdle(watcher);
+        Assert.assertEquals(c.files.size(), 1);
+        Assert.assertTrue(c.files.contains(temp.toString()));
+        Assert.assertTrue(c.dirs.isEmpty());
+    }
+
+    @Test
+    public void fileUnregisration() throws IOException, InterruptedException {
+        Path root = tempDir();
+        Path temp = addFile(root, "blah0.txt");
+
+        watcher.registerRoot(temp);
+        IndexerTesting.waitIdle(watcher);
+        watcher.unregisterRoot(temp);
+
+        IndexerTesting.waitIdle(watcher);
+        Assert.assertTrue(c.files.isEmpty());
+        Assert.assertTrue(c.dirs.isEmpty());
+
+        appendToFile(temp, "blah");
+
+        IndexerTesting.waitIdle(watcher);
+        Assert.assertTrue(c.files.isEmpty());
+        Assert.assertTrue(c.dirs.isEmpty());
+    }
+
+    @Test
+    public void fileDeletion() throws IOException, InterruptedException {
+        Path root = tempDir();
+        Path temp = addFile(root, "blah0.txt");
+
+        watcher.registerRoot(temp);
+        IndexerTesting.waitIdle(watcher);
+        Files.delete(temp);
+
+        IndexerTesting.waitIdle(watcher);
+        Assert.assertTrue(c.files.isEmpty());
+        Assert.assertTrue(c.dirs.isEmpty());
+
+        newFile(temp);
+
+        IndexerTesting.waitIdle(watcher);
+        Assert.assertTrue(c.files.isEmpty());
+        Assert.assertTrue(c.dirs.isEmpty());
+    }
+
+    @Test
     public void directoryRegistering() throws IOException, InterruptedException {
-        Collector c = new Collector();
-        FSEventsService watcher = new FSEventsService(c);
-        try {
-            watcher.startService();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        Path base1 = Files.createTempDirectory("test-");
-        base1.toFile().deleteOnExit();
-
-        Path base2 = Files.createTempDirectory("test-");
-        base2.toFile().deleteOnExit();
+        Path base1 = tempDir();
+        Path base2 = tempDir();
 
         Path subdir11 = base1.resolve("sub1");
         Path subdir12 = base1.resolve("sub2");
@@ -177,14 +244,14 @@ public class FSWatcherTest {
         Assert.assertTrue(c.files.isEmpty());
         Assert.assertTrue(c.dirs.isEmpty());
 
-        Files.createDirectories(subdir2);
-        Thread.sleep(1000);
+        newDir(subdir2);
+        IndexerTesting.waitIdle(watcher);
 
         Assert.assertTrue(c.files.isEmpty());
         Assert.assertTrue(c.dirs.isEmpty());
 
-        Files.createFile(file2);
-        Thread.sleep(1000);
+        newFile(file2);
+        IndexerTesting.waitIdle(watcher);
 
         Assert.assertEquals(c.files.size(), 1);
         Assert.assertTrue(c.files.contains(file2.toString()));
@@ -192,20 +259,20 @@ public class FSWatcherTest {
 
         c.files.clear();
         appendToFile(file2, "blah");
-        Thread.sleep(1000);
+        IndexerTesting.waitIdle(watcher);
 
         Assert.assertEquals(c.files.size(), 1);
         Assert.assertTrue(c.files.contains(file2.toString()));
         Assert.assertTrue(c.dirs.isEmpty());
 
         Files.delete(file2);
-        Thread.sleep(1000);
+        IndexerTesting.waitIdle(watcher);
 
         Assert.assertTrue(c.files.isEmpty());
         Assert.assertTrue(c.dirs.isEmpty());
 
         Files.createFile(file2);
-        Thread.sleep(1000);
+        IndexerTesting.waitIdle(watcher);
 
         Assert.assertEquals(c.files.size(), 1);
         Assert.assertTrue(c.files.contains(file2.toString()));
@@ -217,48 +284,26 @@ public class FSWatcherTest {
         Assert.assertTrue(c.dirs.isEmpty());
 
         appendToFile(file2, "blah");
-        Thread.sleep(1000);
+        IndexerTesting.waitIdle(watcher);
 
         Assert.assertTrue(c.files.isEmpty());
         Assert.assertTrue(c.dirs.isEmpty());
 
         Files.delete(file2);
         Files.delete(subdir2);
-        Thread.sleep(1000);
+        IndexerTesting.waitIdle(watcher);
 
         Assert.assertTrue(c.files.isEmpty());
         Assert.assertTrue(c.dirs.isEmpty());
-
-        try {
-            watcher.stopService();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        watcher.waitFinished(10, TimeUnit.SECONDS);
     }
 
     @Test
     public void errors() throws IOException, InterruptedException {
-        Collector c = new Collector();
-        FSEventsService watcher = new FSEventsService(c);
-        try {
-            watcher.startService();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        Path unexisting = Files.createTempDirectory("test-");
+        Path unexisting = tempDir();
         Files.delete(unexisting);
         watcher.registerRoot(unexisting);
 
         Assert.assertTrue(c.files.isEmpty());
         Assert.assertTrue(c.dirs.isEmpty());
-
-        try {
-            watcher.stopService();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        watcher.waitFinished(10, TimeUnit.SECONDS);
     }
 }

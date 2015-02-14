@@ -4,6 +4,7 @@ import com.github.kassak.indexer.utils.InterruptibleCallable;
 import com.github.kassak.indexer.utils.ThreadService;
 import com.github.kassak.indexer.utils.Uninterruptible;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.TestOnly;
 
 import java.io.IOException;
 import java.nio.file.*;
@@ -30,6 +31,7 @@ public class FSEventsService implements Runnable, IFSWatcherService {
         this.fsProcessor = fsProcessor;
         this.watchKeys = new HashMap<>();
         this.watchFilters = new ConcurrentHashMap<>();
+        waitingForEvents = false;
     }
 
     @Override
@@ -57,8 +59,7 @@ public class FSEventsService implements Runnable, IFSWatcherService {
     public void stopService() {
         try {
             currentService.stopService();
-        }
-        finally {
+        } finally {
             try {
                 watcher.close();
             } catch (IOException e) {
@@ -75,6 +76,12 @@ public class FSEventsService implements Runnable, IFSWatcherService {
     @Override
     public boolean waitFinished(long timeout, @NotNull TimeUnit unit) throws InterruptedException {
         return currentService.waitFinished(timeout, unit);
+    }
+
+    @Override
+    @TestOnly
+    public boolean isIdle() {
+        return waitingForEvents;
     }
 
     public void registerRoot(@NotNull Path path) throws IOException {
@@ -293,6 +300,7 @@ public class FSEventsService implements Runnable, IFSWatcherService {
             try {
                 WatchKey key;
                 try {
+                    waitingForEvents = true;
                     key = watcher.take();
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
@@ -300,6 +308,8 @@ public class FSEventsService implements Runnable, IFSWatcherService {
                 } catch (ClosedWatchServiceException e) {
                     log.warning("Watch service closed. breaking");
                     break;
+                } finally {
+                    waitingForEvents = false;
                 }
 
                 Path base = (Path) key.watchable();
@@ -458,5 +468,6 @@ public class FSEventsService implements Runnable, IFSWatcherService {
     private final Map<String, WatchKey> watchKeys;
     private final Map<String, Set<String>> watchFilters;
     private final ThreadService currentService;
+    private volatile boolean waitingForEvents;
     private static final Logger log = Logger.getLogger(FSEventsService.class.getName());
 }

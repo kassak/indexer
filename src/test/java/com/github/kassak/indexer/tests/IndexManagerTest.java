@@ -3,6 +3,7 @@ package com.github.kassak.indexer.tests;
 import com.github.kassak.indexer.IndexManagerService;
 import com.github.kassak.indexer.storage.FileStatistics;
 import com.github.kassak.indexer.storage.factories.IndexProcessorFactory;
+import com.github.kassak.indexer.tests.util.IndexerTesting;
 import com.github.kassak.indexer.tokenizing.factories.FilesProcessorServiceFactory;
 import com.github.kassak.indexer.tokenizing.factories.WhitespaceTokenizerFactory;
 import org.junit.Assert;
@@ -33,10 +34,14 @@ public class IndexManagerTest {
         return false;
     }
 
+    /**
+     * Test that files added to index
+     * @throws InterruptedException
+     */
     @Test
     public void  processing() throws InterruptedException {
         IndexManagerService im = new IndexManagerService(new WhitespaceTokenizerFactory()
-                , new FilesProcessorServiceFactory(10, 100), new IndexProcessorFactory(), 100);
+                , new FilesProcessorServiceFactory(2, 10), new IndexProcessorFactory(), 10);
         try {
             im.startService();
         } catch (Exception e) {
@@ -48,38 +53,38 @@ public class IndexManagerTest {
         im.onFileChanged(FileSystems.getDefault().getPath("1/2/2"));
         im.onFileChanged(FileSystems.getDefault().getPath("1/1/1"));
 
-        Thread.sleep(1000);
+        IndexerTesting.waitIdle(im);
         Assert.assertEquals(im.getFiles().size(), 4);
 
         im.onFileChanged(FileSystems.getDefault().getPath("1/3"));
 
-        Thread.sleep(1000);
+        IndexerTesting.waitIdle(im);
         Assert.assertEquals(im.getFiles().size(), 5);
 
         im.onDirectoryRemoved(FileSystems.getDefault().getPath("1/1"));
 
-        Thread.sleep(1000);
+        IndexerTesting.waitIdle(im);
         Assert.assertEquals(im.getFiles().size(), 3);
 
         im.onDirectoryRemoved(FileSystems.getDefault().getPath("1/2/"));
 
-        Thread.sleep(1000);
+        IndexerTesting.waitIdle(im);
         Assert.assertEquals(im.getFiles().size(), 1);
 
         im.onFileRemoved(FileSystems.getDefault().getPath("1/3"));
 
-        Thread.sleep(1000);
+        IndexerTesting.waitIdle(im);
         Assert.assertEquals(im.getFiles().size(), 0);
 
         Path dummy = FileSystems.getDefault().getPath("../qweqweqwe");
         im.onFileChanged(dummy);
 
-        Thread.sleep(1000);
+        IndexerTesting.waitIdle(im);
         Assert.assertEquals(im.getFiles().size(), 1);
 
         im.onDirectoryChanged(FileSystems.getDefault().getPath(".."));
 
-        Thread.sleep(1000);
+        IndexerTesting.waitIdle(im);
         Assert.assertFalse(statsContains(im.getFiles(), dummy.toString()));
 
 

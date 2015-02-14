@@ -14,6 +14,7 @@ import com.github.kassak.indexer.tokenizing.factories.ITokenizerFactory;
 import com.github.kassak.indexer.utils.Services;
 import com.github.kassak.indexer.utils.ThreadService;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.TestOnly;
 
 import java.io.FileNotFoundException;
 import java.io.FileReader;
@@ -202,6 +203,12 @@ public class IndexManagerService implements Runnable, IIndexManagerService
                 tasks.wait();
             }
         }
+    }
+
+    @Override
+    @TestOnly
+    public boolean isIdle() {
+        return tasks.isEmpty();
     }
 
     @Override

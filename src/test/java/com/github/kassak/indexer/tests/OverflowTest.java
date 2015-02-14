@@ -84,6 +84,10 @@ public class OverflowTest {
         private final IFSEventsProcessor proc;
     }
 
+    /**
+     * Test that system stops on queue overflow
+     * @throws InterruptedException
+     */
     @Test
     public void stopFilesProcessing() throws InterruptedException {
         IndexManagerService im = new IndexManagerService(new WhitespaceTokenizerFactory()
