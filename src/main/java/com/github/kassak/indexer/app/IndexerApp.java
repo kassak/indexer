@@ -49,6 +49,7 @@ public class IndexerApp {
         System.out.println("s\t--\tsearch");
         System.out.println("f\t--\tfiles");
         System.out.println("l\t--\ttoggle console logging");
+        System.out.println("c\t--\tcancel last {,un}registration if it running");
         System.out.println("q\t--\tquit");
     }
 
