@@ -20,12 +20,14 @@ import java.io.FileReader;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.logging.Logger;
 
-public class IndexManagerService extends ThreadService
-        implements IIndexManagerService, IFileProcessingResults, IFilesProcessor, IFSEventsProcessor {
+public class IndexManagerService implements Runnable, IIndexManagerService
+        , IFileProcessingResults, IFilesProcessor, IFSEventsProcessor {
 
     public IndexManagerService(@NotNull ITokenizerFactory tf, @NotNull IFilesProcessorServiceFactory fpf
             , @NotNull IIndexProcessorFactory ipf, int queueSize) {
+        currentService = new ThreadService(this);
         tasks = new PriorityBlockingQueue<>();
         this.queueSize = queueSize;
         tasksSemaphore = new Semaphore(queueSize);
@@ -38,18 +40,22 @@ public class IndexManagerService extends ThreadService
 
     @Override
     public void startService() throws Exception {
-        //TODO
-        filesProcessor.startService();
-        super.startService();
+        Services.startServices(filesProcessor, currentService);
     }
 
     @Override
     public void stopService() throws Exception {
-        try {
-            super.stopService();
-        } finally {
-            Services.stopServices(filesProcessor);
-        }
+        Services.stopServices(currentService, filesProcessor);
+    }
+
+    @Override
+    public boolean isRunning() {
+        return Services.isServicesRunning(filesProcessor, currentService);
+    }
+
+    @Override
+    public boolean waitFinished(long timeout, @NotNull TimeUnit unit) throws InterruptedException {
+        return Services.waitServicesFinished(timeout, unit, filesProcessor, currentService);
     }
 
     @NotNull
@@ -60,6 +66,10 @@ public class IndexManagerService extends ThreadService
 
     @Override
     public void addWordToIndex(@NotNull Path file, @NotNull String word) throws InterruptedException {
+        if(!isRunning()) {
+            log.warning("Received message while not running. Sending it to black hole");
+            return;
+        }
         wordsSemaphore.acquire();
         tasks.put(new IndexManagerTask(IndexManagerTask.ADD_WORD, file, word));
         notifyTasks();
@@ -67,6 +77,10 @@ public class IndexManagerService extends ThreadService
 
     @Override
     public void removeFromIndex(@NotNull Path file) throws InterruptedException {
+        if(!isRunning()) {
+            log.warning("Received message while not running. Sending it to black hole");
+            return;
+        }
         wordsSemaphore.acquire();
         tasks.put(new IndexManagerTask(IndexManagerTask.REMOVE_WORDS, file, null));
         notifyTasks();
@@ -91,6 +105,10 @@ public class IndexManagerService extends ThreadService
 
     @Override
     public void submitFinishedProcessing(@NotNull Path file, long stamp, boolean valid) throws InterruptedException {
+        if(!isRunning()) {
+            log.warning("Received message while not running. Sending it to black hole");
+            return;
+        }
         tasks.put(new IndexManagerTask(valid ? IndexManagerTask.FILE_FINISHED_OK : IndexManagerTask.FILE_FINISHED_FAIL, file, stamp, null));
         tryProcessFiles();
         notifyTasks();
@@ -103,24 +121,40 @@ public class IndexManagerService extends ThreadService
 
     @Override
     public void onFileChanged(@NotNull Path file) throws InterruptedException {
+        if(!isRunning()) {
+            log.warning("Received message while not running. Sending it to black hole");
+            return;
+        }
         tasksSemaphore.acquire();
         tasks.put(new IndexManagerTask(IndexManagerTask.SYNC_FILE, file, null));
     }
 
     @Override
     public void onDirectoryChanged(@NotNull Path file) throws InterruptedException {
+        if(!isRunning()) {
+            log.warning("Received message while not running. Sending it to black hole");
+            return;
+        }
         tasksSemaphore.acquire();
         tasks.put(new IndexManagerTask(IndexManagerTask.SYNC_DIR, file, null));
     }
 
     @Override
     public void onFileRemoved(@NotNull Path file) throws InterruptedException {
+        if(!isRunning()) {
+            log.warning("Received message while not running. Sending it to black hole");
+            return;
+        }
         tasksSemaphore.acquire();
         tasks.put(new IndexManagerTask(IndexManagerTask.DEL_FILE, file, null));
     }
 
     @Override
     public void onDirectoryRemoved(@NotNull Path file) throws InterruptedException {
+        if(!isRunning()) {
+            log.warning("Received message while not running. Sending it to black hole");
+            return;
+        }
         tasksSemaphore.acquire();
         tasks.put(new IndexManagerTask(IndexManagerTask.DEL_DIR, file, null));
     }
@@ -133,6 +167,10 @@ public class IndexManagerService extends ThreadService
 
     @Override
     public boolean processFile(@NotNull Path file){
+        if(!isRunning()) {
+            log.warning("Received message while not running. Sending it to black hole");
+            return false;
+        }
         filesQueue.add(file);
         tryProcessFiles();
         return true;
@@ -158,7 +196,7 @@ public class IndexManagerService extends ThreadService
 
     @Override
     public void run() {
-        while(!Thread.interrupted()) {
+        while(!Thread.currentThread().isInterrupted()) {
             IndexManagerTask task;
             try {
                 task = extractRightPriorityTask();
@@ -210,4 +248,6 @@ public class IndexManagerService extends ThreadService
     private final Deque<Path> filesQueue;
     private final ITokenizerFactory tokenizerFactory;
     private final IFilesProcessorService filesProcessor;
+    private final ThreadService currentService;
+    private static final Logger log = Logger.getLogger(IndexManagerService.class.getName());
 }

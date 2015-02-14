@@ -11,6 +11,7 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -19,13 +20,14 @@ import static java.nio.file.StandardWatchEventKinds.*;
 /**
     Filesystem watcher. Producer of events. Big.
 */
-public class FSEventsService extends ThreadService implements IFSWatcherService {
+public class FSEventsService implements Runnable, IFSWatcherService {
     /**
         Creates new events service with specified processor
 
         @param fsProcessor processor of filesystem events
     */
     public FSEventsService(@NotNull IFSEventsProcessor fsProcessor) {
+        currentService = new ThreadService(this);
         this.fsProcessor = fsProcessor;
         this.watchKeys = new HashMap<>();
         this.watchFilters = new ConcurrentHashMap<>();
@@ -34,13 +36,13 @@ public class FSEventsService extends ThreadService implements IFSWatcherService 
     @Override
     public void startService() throws Exception {
         watcher = FileSystems.getDefault().newWatchService();
-        super.startService();
+        currentService.startService();
     }
 
     @Override
     public void stopService() throws Exception {
         try {
-            super.stopService();
+            currentService.stopService();
         }
         finally {
             try {
@@ -49,6 +51,16 @@ public class FSEventsService extends ThreadService implements IFSWatcherService 
                 log.log(Level.WARNING, "Failed to close watcher", e);
             }
         }
+    }
+
+    @Override
+    public boolean isRunning() {
+        return currentService.isRunning();
+    }
+
+    @Override
+    public boolean waitFinished(long timeout, @NotNull TimeUnit unit) throws InterruptedException {
+        return currentService.waitFinished(timeout, unit);
     }
 
     public void registerRoot(@NotNull Path path) throws IOException {
@@ -171,10 +183,10 @@ public class FSEventsService extends ThreadService implements IFSWatcherService 
     private boolean registerDirectory(@NotNull Path dir) throws IOException {
         String sdir = dir.toString();
         if(log.isLoggable(Level.FINE))
-            log.fine("rigistering " + sdir);
+            log.fine("Registering " + sdir);
         if(!watchKeys.containsKey(sdir)) {
             watchKeys.put(sdir, dir.register(watcher, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY));
-            watchFilters.put(sdir, Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>()));
+            watchFilters.put(sdir, Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>(0)));
             return true;
         } else {
             Set<String> f = watchFilters.get(sdir);
@@ -195,7 +207,7 @@ public class FSEventsService extends ThreadService implements IFSWatcherService 
             log.fine("Unregistering " + path);
         if(!watchKeys.containsKey(sdir)) {
             watchKeys.put(sdir, dir.register(watcher, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY));
-            Set<String> s = new ConcurrentSkipListSet<>();
+            Set<String> s = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>(0));
             s.add(fname);
             watchFilters.put(sdir, s);
             return true;
@@ -431,5 +443,6 @@ public class FSEventsService extends ThreadService implements IFSWatcherService 
     private final IFSEventsProcessor fsProcessor;
     private final Map<String, WatchKey> watchKeys;
     private final Map<String, Set<String>> watchFilters;
+    private final ThreadService currentService;
     private static final Logger log = Logger.getLogger(FSEventsService.class.getName());
 }

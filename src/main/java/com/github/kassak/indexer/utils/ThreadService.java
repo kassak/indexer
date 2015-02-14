@@ -5,27 +5,27 @@ import org.jetbrains.annotations.NotNull;
 import java.util.concurrent.TimeUnit;
 
 /**
-    Abstract base class for thread-based services
+    Class for thread-based services
 */
-public abstract class ThreadService implements IService, Runnable {
+public class ThreadService implements IService {
+    public ThreadService(Runnable r) {
+        thread = new Thread(r);
+    }
     @Override
     public void startService() throws Exception {
-        if(thread != null && thread.isAlive())
+        if(isRunning())
             throw new IllegalStateException("Service already started");
-        thread = new Thread(this);
         thread.start();
     }
 
     @Override
     public void stopService() throws Exception {
-        if(thread == null || !thread.isAlive())
-            return; //already stopped
         thread.interrupt();
     }
 
     @Override
     public boolean isRunning() {
-        return thread != null && thread.isAlive();
+        return thread.isAlive();
     }
 
     @Override
@@ -34,5 +34,5 @@ public abstract class ThreadService implements IService, Runnable {
         return !isRunning();
     }
 
-    private Thread thread;
+    private final Thread thread;
 }

@@ -1,5 +1,6 @@
 package com.github.kassak.indexer.fs;
 
+import com.github.kassak.indexer.utils.Services;
 import com.github.kassak.indexer.utils.ThreadService;
 import org.jetbrains.annotations.NotNull;
 
@@ -15,7 +16,7 @@ import java.util.logging.Logger;
     Service which performs registration of root to events service in
     separate thread.
 */
-public class FSWatcherService extends ThreadService implements IFSWatcherService {
+public class FSWatcherService implements Runnable, IFSWatcherService {
     /**
         Creates new service
 
@@ -23,34 +24,29 @@ public class FSWatcherService extends ThreadService implements IFSWatcherService
         @param queueSize size of registration queue
     */
     public FSWatcherService(@NotNull IFSEventsProcessor processor, int queueSize) {
+        currentService = new ThreadService(this);
         queue = new ArrayBlockingQueue<WatcherRegistrationTask>(queueSize);
         eventsService = new FSEventsService(processor);
     }
 
     @Override
     public void startService() throws Exception {
-        //TODO:
-        eventsService.startService();
-        super.startService();
+        Services.startServices(eventsService, currentService);
     }
 
     @Override
     public void stopService() throws Exception {
-        //TODO:
-        super.stopService();
-        eventsService.stopService();
+        Services.stopServices(currentService, eventsService);
     }
 
     @Override
     public boolean isRunning() {
-        //TODO:
-        return super.isRunning();
+        return Services.isServicesRunning(eventsService, currentService);
     }
 
     @Override
     public boolean waitFinished(long timeout, @NotNull TimeUnit unit) throws InterruptedException {
-        //TODO:
-        return super.waitFinished(timeout, unit);
+        return Services.waitServicesFinished(timeout, unit, eventsService, currentService);
     }
 
     @Override
@@ -89,5 +85,6 @@ public class FSWatcherService extends ThreadService implements IFSWatcherService
 
     private final BlockingQueue<WatcherRegistrationTask> queue;
     private final FSEventsService eventsService;
+    private final ThreadService currentService;
     private final Logger log = Logger.getLogger(FSWatcherService.class.getName());
 }
