@@ -37,7 +37,6 @@ public class Services {
         }
     }
     public static void stopServices(@NotNull IService ... ss) {
-        Exception ex = null;
         for(IService s : ss) {
             try {
                 s.stopService();

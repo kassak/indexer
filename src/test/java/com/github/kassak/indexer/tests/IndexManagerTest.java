@@ -1,6 +1,7 @@
 package com.github.kassak.indexer.tests;
 
 import com.github.kassak.indexer.IndexManagerService;
+import com.github.kassak.indexer.storage.FileStatistics;
 import com.github.kassak.indexer.storage.factories.IndexProcessorFactory;
 import com.github.kassak.indexer.tokenizing.factories.FilesProcessorServiceFactory;
 import com.github.kassak.indexer.tokenizing.factories.WhitespaceTokenizerFactory;
@@ -9,6 +10,7 @@ import org.junit.Test;
 
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Handler;
@@ -22,6 +24,13 @@ public class IndexManagerTest {
         h.setLevel(Level.FINEST);
         topLogger.setLevel(Level.FINEST);
         topLogger.addHandler(h);
+    }
+
+    private static boolean statsContains(List<FileStatistics> fs, String s) {
+        for(FileStatistics f : fs)
+            if(s.equals(f.name))
+                return true;
+        return false;
     }
 
     @Test
@@ -71,7 +80,7 @@ public class IndexManagerTest {
         im.onDirectoryChanged(FileSystems.getDefault().getPath(".."));
 
         Thread.sleep(1000);
-        Assert.assertFalse(im.getFiles().contains(dummy.toString()));
+        Assert.assertFalse(statsContains(im.getFiles(), dummy.toString()));
 
 
         try {

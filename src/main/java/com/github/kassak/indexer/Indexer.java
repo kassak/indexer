@@ -1,7 +1,6 @@
 package com.github.kassak.indexer;
 
 import com.github.kassak.indexer.fs.FSWatcherService;
-import com.github.kassak.indexer.fs.IFSWatcherService;
 import com.github.kassak.indexer.storage.FileEntry;
 import com.github.kassak.indexer.storage.FileStatistics;
 import com.github.kassak.indexer.storage.factories.IndexProcessorFactory;
@@ -11,10 +10,10 @@ import com.github.kassak.indexer.utils.IService;
 import com.github.kassak.indexer.utils.Services;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 public class Indexer implements IService {
@@ -45,12 +44,12 @@ public class Indexer implements IService {
         return Services.waitServicesFinished(timeout, unit, fsWatcher, indexManager);
     }
 
-    public void add(@NotNull String path) throws IOException {
-        fsWatcher.registerRoot(FileSystems.getDefault().getPath(path));
+    public Future<Void> add(@NotNull String path) {
+        return fsWatcher.registerRoot(FileSystems.getDefault().getPath(path));
     }
 
-    public void remove(@NotNull String path) throws IOException {
-        fsWatcher.unregisterRoot(FileSystems.getDefault().getPath(path));
+    public Future<Void> remove(@NotNull String path) {
+        return fsWatcher.unregisterRoot(FileSystems.getDefault().getPath(path));
     }
 
     public @NotNull Collection<FileEntry> search(@NotNull String word) {
@@ -61,6 +60,6 @@ public class Indexer implements IService {
         return indexManager.getFiles();
     }
 
-    private final IFSWatcherService fsWatcher;
+    private final FSWatcherService fsWatcher;
     private final IIndexManagerService indexManager;
 }

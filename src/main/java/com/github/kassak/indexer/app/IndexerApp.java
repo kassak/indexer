@@ -11,6 +11,7 @@ import org.jetbrains.annotations.NotNull;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.concurrent.Future;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Handler;
 import java.util.logging.Level;
@@ -38,6 +39,9 @@ public class IndexerApp {
         public final int registrationQueueSize;
         public final int internalQueueSize;
     }
+
+    private static Future<Void> lastOp;
+
     private static void help() {
         System.out.println("?\t--\thelp");
         System.out.println("a\t--\tadd file");
@@ -51,22 +55,23 @@ public class IndexerApp {
     private static void append(Scanner ins, Indexer indexer) {
         System.out.print("path > ");
         System.out.flush();
-        try {
-            indexer.add(ins.nextLine().trim());
-            System.out.println("added");
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        lastOp = indexer.add(ins.nextLine().trim());
+        System.out.println("adding..");
     }
 
     private static void remove(Scanner ins, Indexer indexer) {
         System.out.print("path > ");
         System.out.flush();
-        try {
-            indexer.remove(ins.nextLine().trim());
-            System.out.println("removed");
-        } catch (Exception e) {
-            e.printStackTrace();
+        lastOp = indexer.remove(ins.nextLine().trim());
+        System.out.println("removing..");
+    }
+
+    private static void cancel() {
+        if(lastOp == null)
+            System.out.println("no last op");
+        else {
+            lastOp.cancel(true);
+            System.out.println("last op cancelling");
         }
     }
 
@@ -194,12 +199,14 @@ public class IndexerApp {
                     remove(ins, indexer);
                 } else if(cmd.equals("s")) {
                     search(ins, indexer);
-                } else if(cmd.equals("q")) {
-                    break;
                 } else if(cmd.equals("f")) {
                     listFiles(indexer);
                 } else if(cmd.equals("l")) {
                     toggleLog(handler);
+                } else if(cmd.equals("c")) {
+                    cancel();
+                } else if(cmd.equals("q")) {
+                    break;
                 } else {
                     System.out.println("Unknown command. Try `?`");
                 }

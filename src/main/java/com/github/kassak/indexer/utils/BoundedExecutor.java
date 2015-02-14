@@ -50,7 +50,7 @@ public class BoundedExecutor {
         Shut executor down
     */
     public void shutdown() {
-        executor.shutdown();
+        executor.shutdownNow();
     }
 
     /**

@@ -1,14 +1,12 @@
 package com.github.kassak.indexer.fs;
 
+import com.github.kassak.indexer.utils.IService;
 import com.github.kassak.indexer.utils.Services;
 import com.github.kassak.indexer.utils.ThreadService;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.IOException;
 import java.nio.file.Path;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -16,7 +14,7 @@ import java.util.logging.Logger;
     Service which performs registration of root to events service in
     separate thread.
 */
-public class FSWatcherService implements Runnable, IFSWatcherService {
+public class FSWatcherService implements Runnable, IService {
     /**
         Creates new service
 
@@ -25,17 +23,19 @@ public class FSWatcherService implements Runnable, IFSWatcherService {
     */
     public FSWatcherService(@NotNull IFSEventsProcessor processor, int queueSize) {
         currentService = new ThreadService(this);
-        queue = new ArrayBlockingQueue<WatcherRegistrationTask>(queueSize);
+        queue = new ArrayBlockingQueue<FutureTask<Void>>(queueSize);
         eventsService = new FSEventsService(processor);
     }
 
     @Override
     public void startService() throws FailureException {
         Services.startServices(eventsService, currentService);
+        running = true;
     }
 
     @Override
     public void stopService() {
+        running = false;
         Services.stopServices(currentService, eventsService);
     }
 
@@ -51,40 +51,52 @@ public class FSWatcherService implements Runnable, IFSWatcherService {
 
     @Override
     public void run() {
-        while(!Thread.currentThread().isInterrupted()) {
+        while(running) {
+            FutureTask<Void> task;
             try {
-                final WatcherRegistrationTask task = queue.take();
-                if(task.register)
-                    eventsService.registerRoot(task.path);
-                else
-                    eventsService.unregisterRoot(task.path);
+                task = queue.take();
             } catch (InterruptedException e) {
                 if(log.isLoggable(Level.FINE))
                     log.fine("Interrupted while waiting for file");
                 Thread.currentThread().interrupt();
                 break;
-            } catch (Exception e) {
-                log.log(Level.WARNING, "Task processing failed", e);
             }
+            task.run();
+            Thread.interrupted(); //reset interruption state
         }
     }
 
-    @Override
-    public void registerRoot(@NotNull Path path) throws IOException {
+    public Future<Void> registerRoot(@NotNull final Path path) {
         if(log.isLoggable(Level.FINE))
             log.fine("Registering " + path);
-        queue.add(new WatcherRegistrationTask(path, true));
+        FutureTask <Void> res = new FutureTask<Void>(new Callable<Void>() {
+            @Override
+            public Void call() throws Exception {
+                eventsService.registerRoot(path);
+                return null;
+            }
+        });
+        queue.add(res);
+        return res;
     }
 
-    @Override
-    public void unregisterRoot(@NotNull Path path) throws IOException {
+    public Future<Void> unregisterRoot(@NotNull final Path path) {
         if(log.isLoggable(Level.FINE))
             log.fine("Unregistering " + path);
-        queue.add(new WatcherRegistrationTask(path, false));
+        FutureTask <Void> res = new FutureTask<Void>(new Callable<Void>() {
+            @Override
+            public Void call() throws Exception {
+                eventsService.unregisterRoot(path);
+                return null;
+            }
+        });
+        queue.add(res);
+        return res;
     }
 
-    private final BlockingQueue<WatcherRegistrationTask> queue;
+    private final BlockingQueue<FutureTask<Void>> queue;
     private final FSEventsService eventsService;
     private final ThreadService currentService;
+    private volatile boolean running;
     private final Logger log = Logger.getLogger(FSWatcherService.class.getName());
 }
