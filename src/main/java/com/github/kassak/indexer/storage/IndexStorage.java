@@ -19,7 +19,7 @@ class IndexStorage {
     static class IndexedWordWrapper {
         public IndexedWordWrapper(@NotNull IndexedWord wrapped) {
             this.wrapped = wrapped;
-            files = Collections.newSetFromMap(new ConcurrentHashMap<IndexedFileWrapper, Boolean>());
+            files = Collections.newSetFromMap(new ConcurrentHashMap<IndexedFileWrapper, Boolean>(1));
         }
 
         public final IndexedWord wrapped;
@@ -28,7 +28,7 @@ class IndexStorage {
     static class IndexedFileWrapper {
         public IndexedFileWrapper(@NotNull IndexedFile wrapped) {
             this.wrapped = wrapped;
-            words = Collections.newSetFromMap(new ConcurrentHashMap<IndexedWordWrapper, Boolean>());
+            words = Collections.newSetFromMap(new ConcurrentHashMap<IndexedWordWrapper, Boolean>(1));
         }
 
         public final IndexedFile wrapped;
