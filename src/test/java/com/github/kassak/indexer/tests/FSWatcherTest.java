@@ -126,7 +126,7 @@ public class FSWatcherTest {
     }
 
     @Test
-    public void fileRegistering() throws IOException, InterruptedException {
+    public void fileRegistration() throws IOException, InterruptedException {
         Path root = tempDir();
 
         Path temp = addFile(root, "blah0.txt");
@@ -222,86 +222,125 @@ public class FSWatcherTest {
     }
 
     @Test
-    public void directoryRegistering() throws IOException, InterruptedException {
-        Path base1 = tempDir();
-        Path base2 = tempDir();
+    public void directoryRegistration() throws IOException, InterruptedException {
+        Path root = tempDir();
+        watcher.registerRoot(root);
 
-        Path subdir11 = base1.resolve("sub1");
-        Path subdir12 = base1.resolve("sub2");
-
-        Path subdir2 = base2.resolve("sub");
-
-        Path file1 = base1.resolve("file1.txt");
-        Path file12 = subdir11.resolve("file2.txt");
-
-        Path file2 = subdir2.resolve("file.txt");
-
-        Assert.assertTrue(c.files.isEmpty());
-        Assert.assertTrue(c.dirs.isEmpty());
-
-        watcher.registerRoot(base2);
-
-        Assert.assertTrue(c.files.isEmpty());
-        Assert.assertTrue(c.dirs.isEmpty());
-
-        newDir(subdir2);
         IndexerTesting.waitIdle(watcher);
-
         Assert.assertTrue(c.files.isEmpty());
         Assert.assertTrue(c.dirs.isEmpty());
 
-        newFile(file2);
-        IndexerTesting.waitIdle(watcher);
+        Path file = addFile(root, "blah.txt");
 
+        IndexerTesting.waitIdle(watcher);
         Assert.assertEquals(c.files.size(), 1);
-        Assert.assertTrue(c.files.contains(file2.toString()));
+        Assert.assertTrue(c.files.contains(file.toString()));
         Assert.assertTrue(c.dirs.isEmpty());
+    }
 
-        c.files.clear();
-        appendToFile(file2, "blah");
+    @Test
+    public void directoryUnregistration() throws IOException, InterruptedException {
+        Path root = tempDir();
+        watcher.registerRoot(root);
+        Path file = addFile(root, "blah.txt");
+
         IndexerTesting.waitIdle(watcher);
+        watcher.unregisterRoot(root);
 
-        Assert.assertEquals(c.files.size(), 1);
-        Assert.assertTrue(c.files.contains(file2.toString()));
-        Assert.assertTrue(c.dirs.isEmpty());
-
-        Files.delete(file2);
         IndexerTesting.waitIdle(watcher);
-
         Assert.assertTrue(c.files.isEmpty());
         Assert.assertTrue(c.dirs.isEmpty());
 
-        Files.createFile(file2);
+        appendToFile(file, "blah");
+
         IndexerTesting.waitIdle(watcher);
-
-        Assert.assertEquals(c.files.size(), 1);
-        Assert.assertTrue(c.files.contains(file2.toString()));
-        Assert.assertTrue(c.dirs.isEmpty());
-
-        watcher.unregisterRoot(base2);
-
-        Assert.assertTrue(c.files.isEmpty());
-        Assert.assertTrue(c.dirs.isEmpty());
-
-        appendToFile(file2, "blah");
-        IndexerTesting.waitIdle(watcher);
-
-        Assert.assertTrue(c.files.isEmpty());
-        Assert.assertTrue(c.dirs.isEmpty());
-
-        Files.delete(file2);
-        Files.delete(subdir2);
-        IndexerTesting.waitIdle(watcher);
-
         Assert.assertTrue(c.files.isEmpty());
         Assert.assertTrue(c.dirs.isEmpty());
     }
 
     @Test
-    public void errors() throws IOException, InterruptedException {
+    public void directorySubdirRegistration() throws IOException, InterruptedException {
+        Path root = tempDir();
+        watcher.registerRoot(root);
+
+        Path subdir = addDir(root, "blah");
+        Path file = addFile(subdir, "blah.txt");
+
+        IndexerTesting.waitIdle(watcher);
+        Assert.assertEquals(c.files.size(), 1);
+        Assert.assertTrue(c.files.contains(file.toString()));
+        Assert.assertTrue(c.dirs.isEmpty());
+    }
+
+    @Test
+    public void directoryFileRemoval() throws IOException, InterruptedException {
+        Path root = tempDir();
+        watcher.registerRoot(root);
+        Path file = addFile(root, "blah.txt");
+
+        IndexerTesting.waitIdle(watcher);
+        Files.delete(file);
+
+        IndexerTesting.waitIdle(watcher);
+        Assert.assertTrue(c.files.isEmpty());
+        Assert.assertTrue(c.dirs.isEmpty());
+    }
+
+    @Test
+    public void directorySubdirRemoval() throws IOException, InterruptedException {
+        Path root = tempDir();
+        watcher.registerRoot(root);
+
+        Path subdir = addDir(root, "blah");
+        Path file = addFile(subdir, "blah.txt");
+
+        IndexerTesting.waitIdle(watcher);
+
+        Files.delete(file);
+        Files.delete(subdir);
+
+        IndexerTesting.waitIdle(watcher);
+        Assert.assertTrue(c.files.isEmpty());
+        Assert.assertTrue(c.dirs.isEmpty());
+    }
+
+    @Test
+    public void unexistingRegistration() throws IOException, InterruptedException {
         Path unexisting = tempDir();
         Files.delete(unexisting);
         watcher.registerRoot(unexisting);
+
+        IndexerTesting.waitIdle(watcher);
+        Assert.assertTrue(c.files.isEmpty());
+        Assert.assertTrue(c.dirs.isEmpty());
+    }
+
+    @Test
+    public void superUnregistration() throws IOException, InterruptedException {
+        Path superRoot = tempDir();
+        Path root = addDir(superRoot, "blah");
+        Path file = addFile(root, "blah.txt");
+        watcher.registerRoot(root);
+
+        IndexerTesting.waitIdle(watcher);
+        watcher.unregisterRoot(superRoot);
+
+        Assert.assertEquals(c.files.size(), 1);
+        Assert.assertTrue(c.dirs.isEmpty());
+    }
+
+    @Test
+    public void superUnregistration2() throws IOException, InterruptedException {
+        Path superRoot = tempDir();
+        Path root = addDir(superRoot, "blah");
+        Path file = addFile(root, "blah.txt");
+        watcher.registerRoot(root);
+
+        IndexerTesting.waitIdle(watcher);
+        watcher.registerRoot(superRoot);
+
+        IndexerTesting.waitIdle(watcher);
+        watcher.unregisterRoot(superRoot);
 
         Assert.assertTrue(c.files.isEmpty());
         Assert.assertTrue(c.dirs.isEmpty());

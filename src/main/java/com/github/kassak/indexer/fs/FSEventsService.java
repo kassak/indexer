@@ -158,6 +158,10 @@ public class FSEventsService implements Runnable, IFSWatcherService {
     public void unregisterRoot(@NotNull final Path path) throws IOException {
         synchronized (watchKeys) {
             if (Files.isDirectory(path)) {
+                if(!watchKeys.containsKey(path.toAbsolutePath().toString())) {
+                    log.warning("Ignoring attempt to unregister unwatched dir " + path.toAbsolutePath());
+                    return;
+                }
                 if(watchKeys.containsKey(path.toAbsolutePath().getParent().toString())) {
                     log.warning("Ignoring attempt to unregister subdir of watched dir " + path.toAbsolutePath());
                     return;
