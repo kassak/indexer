@@ -8,19 +8,22 @@ import java.util.concurrent.TimeUnit;
     Interface for start-stop services
 */
 public interface IService {
+    static class FailureException extends Exception {
+        public FailureException() {
+            super("Service start failure");
+        }
+    }
     /**
         Starts service
 
-        @throws Exception in case of start failure
+        @throws IService.FailureException in case of start failure
     */
-    public void startService() throws Exception;
+    public void startService() throws FailureException;
 
     /**
         Stops service
-
-        @throws Exception in case of stop failure
     */
-    public void stopService() throws Exception;
+    public void stopService();
 
     /**
         Check if service is running

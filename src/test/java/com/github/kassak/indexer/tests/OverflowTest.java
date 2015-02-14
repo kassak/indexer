@@ -39,12 +39,12 @@ public class OverflowTest {
                 }
 
                 @Override
-                public void startService() throws Exception {
+                public void startService() throws FailureException {
 
                 }
 
                 @Override
-                public void stopService() throws Exception {
+                public void stopService() {
 
                 }
 

@@ -12,14 +12,14 @@ public class ThreadService implements IService {
         thread = new Thread(r);
     }
     @Override
-    public void startService() throws Exception {
+    public void startService() throws FailureException {
         if(isRunning())
             throw new IllegalStateException("Service already started");
         thread.start();
     }
 
     @Override
-    public void stopService() throws Exception {
+    public void stopService() {
         thread.interrupt();
     }
 

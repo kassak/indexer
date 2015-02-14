@@ -4,6 +4,8 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class Services {
     public static boolean waitServicesFinished(long timeout, @NotNull TimeUnit unit, @NotNull IService ... ss)
@@ -24,26 +26,26 @@ public class Services {
                 return false;
         return true;
     }
-    public static void startServices(@NotNull IService ... ss) throws Exception {
+    public static void startServices(@NotNull IService ... ss) throws IService.FailureException {
         for(int i = 0; i < ss.length; ++i) {
             try {
                 ss[i].startService();
-            } catch (Exception e) {
+            } catch (IService.FailureException e) {
                 stopServices(Arrays.copyOfRange(ss, 0, i));
                 throw e;
             }
         }
     }
-    public static void stopServices(@NotNull IService ... ss) throws Exception {
+    public static void stopServices(@NotNull IService ... ss) {
         Exception ex = null;
         for(IService s : ss) {
             try {
                 s.stopService();
             } catch (Exception e) {
-                ex = e;
+                log.log(Level.WARNING, "exception while stopping " + s, e);
             }
         }
-        if(ex != null)
-            throw ex;
     }
+
+    private static final Logger log = Logger.getLogger(Services.class.getName());
 }

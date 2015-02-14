@@ -35,14 +35,14 @@ public class FilesProcessorService implements IFilesProcessorService {
     }
 
     @Override
-    public void startService() throws Exception {
+    public void startService() throws FailureException {
         if(isRunning())
             throw new IllegalStateException("Service already running");
         executor = new BoundedExecutor(threadsNum, queueSize);
     }
 
     @Override
-    public void stopService() throws Exception {
+    public void stopService() {
         if(!isRunning())
             throw new IllegalStateException("Service already stopped");
         executor.shutdown();

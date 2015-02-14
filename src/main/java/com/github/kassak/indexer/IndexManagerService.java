@@ -39,13 +39,17 @@ public class IndexManagerService implements Runnable, IIndexManagerService
     }
 
     @Override
-    public void startService() throws Exception {
+    public void startService() throws FailureException {
         Services.startServices(filesProcessor, currentService);
     }
 
     @Override
-    public void stopService() throws Exception {
+    public void stopService() {
         Services.stopServices(currentService, filesProcessor);
+        tasks.clear();
+        //wake up threads, putting to queue
+        wordsSemaphore.release((int)queueSize);
+        tasksSemaphore.release((int)queueSize);
     }
 
     @Override
@@ -64,24 +68,34 @@ public class IndexManagerService implements Runnable, IIndexManagerService
         return indexProcessor.search(word);
     }
 
+    private boolean acquireSemaphoreAndRunning(@NotNull Semaphore sem) throws InterruptedException {
+        if(!isRunning()) {
+            return false;
+        }
+        sem.acquire();
+        if(!isRunning()) {
+            sem.release();
+            return false;
+        }
+        return true;
+    }
+
     @Override
     public void addWordToIndex(@NotNull Path file, @NotNull String word) throws InterruptedException {
-        if(!isRunning()) {
-            log.warning("Received message while not running. Sending it to black hole");
+        if(!acquireSemaphoreAndRunning(wordsSemaphore)) {
+            log.warning("Word received while not running. Annihilating");
             return;
         }
-        wordsSemaphore.acquire();
         tasks.put(new IndexManagerTask(IndexManagerTask.ADD_WORD, file, word));
         notifyTasks();
     }
 
     @Override
     public void removeFromIndex(@NotNull Path file) throws InterruptedException {
-        if(!isRunning()) {
-            log.warning("Received message while not running. Sending it to black hole");
+        if(!acquireSemaphoreAndRunning(wordsSemaphore)) {
+            log.warning("Remove file while not running. Annihilating");
             return;
         }
-        wordsSemaphore.acquire();
         tasks.put(new IndexManagerTask(IndexManagerTask.REMOVE_WORDS, file, null));
         notifyTasks();
     }
@@ -106,7 +120,7 @@ public class IndexManagerService implements Runnable, IIndexManagerService
     @Override
     public void submitFinishedProcessing(@NotNull Path file, long stamp, boolean valid) throws InterruptedException {
         if(!isRunning()) {
-            log.warning("Received message while not running. Sending it to black hole");
+            log.warning("Received result while not running. Sending it to black hole");
             return;
         }
         tasks.put(new IndexManagerTask(valid ? IndexManagerTask.FILE_FINISHED_OK : IndexManagerTask.FILE_FINISHED_FAIL, file, stamp, null));
@@ -121,41 +135,37 @@ public class IndexManagerService implements Runnable, IIndexManagerService
 
     @Override
     public void onFileChanged(@NotNull Path file) throws InterruptedException {
-        if(!isRunning()) {
-            log.warning("Received message while not running. Sending it to black hole");
+        if(!acquireSemaphoreAndRunning(tasksSemaphore)) {
+            log.warning("Change received while not running. Annihilating");
             return;
         }
-        tasksSemaphore.acquire();
         tasks.put(new IndexManagerTask(IndexManagerTask.SYNC_FILE, file, null));
     }
 
     @Override
     public void onDirectoryChanged(@NotNull Path file) throws InterruptedException {
-        if(!isRunning()) {
-            log.warning("Received message while not running. Sending it to black hole");
+        if(!acquireSemaphoreAndRunning(tasksSemaphore)) {
+            log.warning("Change received while not running. Annihilating");
             return;
         }
-        tasksSemaphore.acquire();
         tasks.put(new IndexManagerTask(IndexManagerTask.SYNC_DIR, file, null));
     }
 
     @Override
     public void onFileRemoved(@NotNull Path file) throws InterruptedException {
-        if(!isRunning()) {
-            log.warning("Received message while not running. Sending it to black hole");
+        if(!acquireSemaphoreAndRunning(tasksSemaphore)) {
+            log.warning("Remove received while not running. Annihilating");
             return;
         }
-        tasksSemaphore.acquire();
         tasks.put(new IndexManagerTask(IndexManagerTask.DEL_FILE, file, null));
     }
 
     @Override
     public void onDirectoryRemoved(@NotNull Path file) throws InterruptedException {
-        if(!isRunning()) {
-            log.warning("Received message while not running. Sending it to black hole");
+        if(!acquireSemaphoreAndRunning(tasksSemaphore)) {
+            log.warning("Remove received while not running. Annihilating");
             return;
         }
-        tasksSemaphore.acquire();
         tasks.put(new IndexManagerTask(IndexManagerTask.DEL_DIR, file, null));
     }
 

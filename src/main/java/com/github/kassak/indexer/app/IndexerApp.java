@@ -208,11 +208,7 @@ public class IndexerApp {
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
-            try {
-                indexer.stopService();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+            indexer.stopService();
         }
 
     }

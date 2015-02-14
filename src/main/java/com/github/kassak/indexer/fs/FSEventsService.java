@@ -34,13 +34,28 @@ public class FSEventsService implements Runnable, IFSWatcherService {
     }
 
     @Override
-    public void startService() throws Exception {
-        watcher = FileSystems.getDefault().newWatchService();
-        currentService.startService();
+    public void startService() throws FailureException {
+        try {
+            watcher = FileSystems.getDefault().newWatchService();
+        } catch(IOException e) {
+            log.log(Level.WARNING, "Failed to start watcher", e);
+            throw new FailureException();
+        }
+        try {
+            currentService.startService();
+        } catch(FailureException e) {
+            log.warning("Failed to start, closing watcher");
+            try {
+                watcher.close();
+            } catch (IOException we) {
+                log.log(Level.WARNING, "Failed to close watcher", we);
+            }
+            throw e;
+        }
     }
 
     @Override
-    public void stopService() throws Exception {
+    public void stopService() {
         try {
             currentService.stopService();
         }
