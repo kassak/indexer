@@ -11,6 +11,7 @@ import com.github.kassak.indexer.tokenizing.factories.WhitespaceTokenizerFactory
 import com.github.kassak.indexer.utils.IService;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -55,6 +56,33 @@ public class IndexManagerTest {
                 public String next() {
                     has = false;
                     return "Bazinga!";
+                }
+
+                @Override
+                public void remove() {
+                    throw new UnsupportedOperationException("Bazinga!");
+                }
+                private boolean has = true;
+            };
+        }
+    }
+
+    private static class MillionTokenizerFactory implements ITokenizerFactory {
+        @Override
+        public ITokenizer create(@NotNull final Path file) throws IOException {
+            return new ITokenizer() {
+                @Override
+                public void close() throws Exception {}
+
+                @Override
+                public boolean hasNext() {
+                    return has;
+                }
+
+                @Override
+                public String next() {
+                    has = false;
+                    return file.toString();
                 }
 
                 @Override
@@ -130,6 +158,26 @@ public class IndexManagerTest {
         Assert.assertEquals(im.search("Bazinga!").size(), 1000);
 
         Assert.assertEquals(im.getFiles().size(), 1000);
+        for(FileStatistics fs : im.getFiles())
+            Assert.assertEquals(fs.wordsNum, 1);
+
+        im.stopService();
+        im.waitFinished(10, TimeUnit.SECONDS);
+    }
+
+    @Ignore("Passing, but long")
+    @Test
+    public void millionWords() throws InterruptedException, IService.FailureException {
+        IndexManagerService im = new IndexManagerService(new MillionTokenizerFactory()
+                , new FilesProcessorServiceFactory(2, 10), new IndexProcessorFactory(), 10);
+        im.startService();
+
+        for(int i = 0; i < 1000000; ++i)
+            im.onFileChanged(FileSystems.getDefault().getPath("file-" + i));
+
+        IndexerTesting.waitIdle(im);
+
+        Assert.assertEquals(im.getFiles().size(), 1000000);
         for(FileStatistics fs : im.getFiles())
             Assert.assertEquals(fs.wordsNum, 1);
 
