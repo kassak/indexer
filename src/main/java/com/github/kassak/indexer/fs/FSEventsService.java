@@ -92,6 +92,11 @@ public class FSEventsService implements Runnable, IService {
         return waitingForEvents;
     }
 
+    @TestOnly
+    public long getLastActivity() {
+        return isIdle() ? lastActivity : System.currentTimeMillis();
+    }
+
     public boolean isFileRegistered(@NotNull Path path) {
         Set<String> res = watchWhitelists.get(path.getParent().toString());
         return res == null || res.contains(path.getFileName().toString());
@@ -217,6 +222,7 @@ public class FSEventsService implements Runnable, IService {
     public void run() {
         while (!Thread.interrupted()) {
             try {
+                lastActivity = System.currentTimeMillis();
                 WatchKey key;
                 try {
                     waitingForEvents = true;
@@ -276,5 +282,6 @@ public class FSEventsService implements Runnable, IService {
     private final Set<String> watchBlacklists;
     private final ThreadService currentService;
     private volatile boolean waitingForEvents;
+    private volatile long lastActivity;
     private static final Logger log = Logger.getLogger(FSEventsService.class.getName());
 }

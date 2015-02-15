@@ -2,6 +2,7 @@ package com.github.kassak.indexer.fs;
 
 import com.github.kassak.indexer.utils.*;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.TestOnly;
 
 import java.io.IOException;
 import java.nio.file.FileVisitResult;
@@ -58,6 +59,7 @@ public class FSWatcherService implements Runnable, IService, FSEventsService.IRa
     @Override
     public void run() {
         while(running) {
+            updateActivity();
             FutureTask<Void> task;
             try {
                 task = queue.take();
@@ -130,6 +132,7 @@ public class FSWatcherService implements Runnable, IService, FSEventsService.IRa
                     Files.walkFileTree(path, new SimpleFileVisitor<Path>() {
                         @Override
                         public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
+                            updateActivity();
                             if (Thread.currentThread().isInterrupted())
                                 return FileVisitResult.SKIP_SIBLINGS;
                             if(eventsService.isBlacklisted(dir)) {
@@ -144,6 +147,7 @@ public class FSWatcherService implements Runnable, IService, FSEventsService.IRa
 
                         @Override
                         public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                            updateActivity();
                             if (Thread.currentThread().isInterrupted())
                                 return FileVisitResult.SKIP_SIBLINGS;
                             if(eventsService.isBlacklisted(file)) {
@@ -223,6 +227,7 @@ public class FSWatcherService implements Runnable, IService, FSEventsService.IRa
                 Files.walkFileTree(path, new SimpleFileVisitor<Path>() {
                     @Override
                     public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
+                        updateActivity();
                         eventsService.unregisterDirectory(dir);
                         return FileVisitResult.CONTINUE;
                     }
@@ -277,6 +282,7 @@ public class FSWatcherService implements Runnable, IService, FSEventsService.IRa
             Files.walkFileTree(path, new SimpleFileVisitor<Path>() {
                 @Override
                 public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
+                    updateActivity();
                     if(Thread.currentThread().isInterrupted())
                         return FileVisitResult.SKIP_SIBLINGS;
                     if(filter.isEmpty())
@@ -286,6 +292,7 @@ public class FSWatcherService implements Runnable, IService, FSEventsService.IRa
 
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                    updateActivity();
                     if(Thread.currentThread().isInterrupted())
                         return FileVisitResult.SKIP_SIBLINGS;
                     if(filter.contains(file.getFileName().toString()))
@@ -413,8 +420,18 @@ public class FSWatcherService implements Runnable, IService, FSEventsService.IRa
         queue.add(res);
     }
 
+    @TestOnly
     public boolean isIdle() {
         return queue.isEmpty() && eventsService.isIdle();
+    }
+
+    @TestOnly
+    public long getLastActivity() {
+        return isIdle() ? lastActivity : eventsService.getLastActivity();
+    }
+
+    private void updateActivity() {
+        lastActivity = System.currentTimeMillis();
     }
 
     private final BlockingQueue<FutureTask<Void>> queue;
@@ -422,5 +439,6 @@ public class FSWatcherService implements Runnable, IService, FSEventsService.IRa
     private final IFSEventsProcessor eventsProcessor;
     private final ThreadService currentService;
     private volatile boolean running;
+    private volatile long lastActivity;
     private final Logger log = Logger.getLogger(FSWatcherService.class.getName());
 }

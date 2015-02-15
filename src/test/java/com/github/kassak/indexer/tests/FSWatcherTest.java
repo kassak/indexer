@@ -274,6 +274,7 @@ public class FSWatcherTest {
         Path subdir = addDir(root, "blah");
         Path file = addFile(subdir, "blah.txt");
 
+        Thread.sleep(1000);
         IndexerTesting.waitIdle(watcher);
         Assert.assertEquals(c.files.size(), 1);
         Assert.assertTrue(c.files.contains(file.toString()));
