@@ -1,7 +1,7 @@
 package com.github.kassak.indexer.tests.util;
 
 import com.github.kassak.indexer.IIndexManagerService;
-import com.github.kassak.indexer.fs.IFSWatcherService;
+import com.github.kassak.indexer.fs.FSWatcherService;
 
 public class IndexerTesting {
     public static void waitIdle(IIndexManagerService im) throws InterruptedException {
@@ -9,7 +9,7 @@ public class IndexerTesting {
         while(!im.isIdle())
             Thread.sleep(100);
     }
-    public static void waitIdle(IFSWatcherService fs) throws InterruptedException {
+    public static void waitIdle(FSWatcherService fs) throws InterruptedException {
         int count = 0;
         while(count < 2) {
             if(fs.isIdle())

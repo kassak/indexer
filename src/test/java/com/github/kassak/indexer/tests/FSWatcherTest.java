@@ -1,6 +1,7 @@
 package com.github.kassak.indexer.tests;
 
 import com.github.kassak.indexer.fs.FSEventsService;
+import com.github.kassak.indexer.fs.FSWatcherService;
 import com.github.kassak.indexer.fs.IFSEventsProcessor;
 import com.github.kassak.indexer.tests.util.IndexerTesting;
 import com.github.kassak.indexer.utils.IService;
@@ -33,33 +34,40 @@ class Collector implements IFSEventsProcessor {
 
     @Override
     public void onFileRemoved(@NotNull Path file) {
+        log.finest("-file " + file);
         files.remove(file.toString());
     }
 
     @Override
     public void onFileChanged(@NotNull Path file) {
+        log.finest("+file " + file);
         files.add(file.toString());
     }
 
     @Override
     public void onDirectoryRemoved(@NotNull Path file) {
+        log.finest("-dir " + file);
         dirs.remove(file.toString());
         Iterator<String> it = files.iterator();
         while(it.hasNext()) {
             String s = it.next();
-            if (s.startsWith(file.toString()))
+            if (s.startsWith(file.toString())) {
                 it.remove();
+                log.finest("-file* " + s);
+            }
         }
     }
 
     @Override
     public void onDirectoryChanged(@NotNull Path file) {
+        log.finest("+dir " + file);
         dirs.add(file.toString());
         Assert.assertTrue(false);
     }
 
     public final Set<String> files;
     public final Set<String> dirs;
+    private final static Logger log = Logger.getLogger(Collector.class.getName());
 }
 
 public class FSWatcherTest {
@@ -106,12 +114,12 @@ public class FSWatcherTest {
     }
 
     private Collector c;
-    private FSEventsService watcher;
+    private FSWatcherService watcher;
 
     @Before
     public void init() throws IService.FailureException {
         c = new Collector();
-        watcher = new FSEventsService(c);
+        watcher = new FSWatcherService(c, 10);
         watcher.startService();
     }
 
@@ -342,6 +350,7 @@ public class FSWatcherTest {
         IndexerTesting.waitIdle(watcher);
         watcher.unregisterRoot(superRoot);
 
+        IndexerTesting.waitIdle(watcher);
         Assert.assertTrue(c.files.isEmpty());
         Assert.assertTrue(c.dirs.isEmpty());
     }
