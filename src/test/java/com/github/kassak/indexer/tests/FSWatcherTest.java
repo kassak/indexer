@@ -136,10 +136,7 @@ public class FSWatcherTest {
     @Test
     public void fileRegistration() throws IOException, InterruptedException {
         Path root = tempDir();
-
         Path temp = addFile(root, "blah0.txt");
-        Assert.assertTrue(c.files.isEmpty());
-        Assert.assertTrue(c.dirs.isEmpty());
 
         watcher.registerRoot(temp);
 
@@ -195,7 +192,6 @@ public class FSWatcherTest {
         Path temp = addFile(root, "blah0.txt");
 
         watcher.registerRoot(temp);
-        IndexerTesting.waitIdle(watcher);
         watcher.unregisterRoot(temp);
 
         IndexerTesting.waitIdle(watcher);
@@ -274,7 +270,6 @@ public class FSWatcherTest {
         Path subdir = addDir(root, "blah");
         Path file = addFile(subdir, "blah.txt");
 
-        Thread.sleep(1000);
         IndexerTesting.waitIdle(watcher);
         Assert.assertEquals(c.files.size(), 1);
         Assert.assertTrue(c.files.contains(file.toString()));
