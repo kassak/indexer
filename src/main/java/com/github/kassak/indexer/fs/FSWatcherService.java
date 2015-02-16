@@ -30,7 +30,7 @@ public class FSWatcherService implements Runnable, IService, FSEventsService.IRa
     public FSWatcherService(@NotNull IFSEventsProcessor processor, int queueSize) {
         eventsProcessor = processor;
         currentService = new ThreadService(this);
-        queue = new ArrayBlockingQueue<FutureTask<Void>>(queueSize);
+        queue = new ArrayBlockingQueue<>(queueSize);
         eventsService = new FSEventsService(this);
     }
 
@@ -77,7 +77,7 @@ public class FSWatcherService implements Runnable, IService, FSEventsService.IRa
     public Future<Void> registerRoot(@NotNull final Path path) {
         if(log.isLoggable(Level.FINER))
             log.finer("Registering " + path);
-        FutureTask <Void> res = new FutureTask<Void>(new Callable<Void>() {
+        FutureTask <Void> res = new FutureTask<>(new Callable<Void>() {
             @Override
             public Void call() throws Exception {
                 registerRootImpl(path, false);
@@ -91,7 +91,7 @@ public class FSWatcherService implements Runnable, IService, FSEventsService.IRa
     public Future<Void> unregisterRoot(@NotNull final Path path) {
         if(log.isLoggable(Level.FINER))
             log.finer("Unregistering " + path);
-        FutureTask <Void> res = new FutureTask<Void>(new Callable<Void>() {
+        FutureTask <Void> res = new FutureTask<>(new Callable<Void>() {
             @Override
             public Void call() throws Exception {
                 unregisterRootImpl(path);
@@ -368,7 +368,7 @@ public class FSWatcherService implements Runnable, IService, FSEventsService.IRa
     public void processOverflow(final @NotNull Path path) {
         if(log.isLoggable(Level.FINER))
             log.finer("processOverflow " + path);
-        FutureTask <Void> res = new FutureTask<Void>(new Callable<Void>() {
+        FutureTask <Void> res = new FutureTask<>(new Callable<Void>() {
             @Override
             public Void call() throws Exception {
                 processOverflowImpl(path);
@@ -382,7 +382,7 @@ public class FSWatcherService implements Runnable, IService, FSEventsService.IRa
     public void processNewEntry(final @NotNull Path path) {
         if(log.isLoggable(Level.FINER))
             log.finer("processNewEntry " + path);
-        FutureTask <Void> res = new FutureTask<Void>(new Callable<Void>() {
+        FutureTask <Void> res = new FutureTask<>(new Callable<Void>() {
             @Override
             public Void call() throws Exception {
                 processNewEntryImpl(path);
@@ -396,7 +396,7 @@ public class FSWatcherService implements Runnable, IService, FSEventsService.IRa
     public void processDeleteEntry(final @NotNull Path path) {
         if(log.isLoggable(Level.FINER))
             log.finer("processDeleteEntry " + path);
-        FutureTask <Void> res = new FutureTask<Void>(new Callable<Void>() {
+        FutureTask <Void> res = new FutureTask<>(new Callable<Void>() {
             @Override
             public Void call() throws Exception {
                 processDeleteEntryImpl(path);
@@ -410,7 +410,7 @@ public class FSWatcherService implements Runnable, IService, FSEventsService.IRa
     public void processModifyEntry(final @NotNull Path path) {
         if(log.isLoggable(Level.FINER))
             log.finer("processModifyEntry " + path);
-        FutureTask <Void> res = new FutureTask<Void>(new Callable<Void>() {
+        FutureTask <Void> res = new FutureTask<>(new Callable<Void>() {
             @Override
             public Void call() throws Exception {
                 processModifyEntryImpl(path);

@@ -1,15 +1,12 @@
 package com.github.kassak.indexer.fs;
 
 import com.github.kassak.indexer.utils.IService;
-import com.github.kassak.indexer.utils.InterruptibleCallable;
 import com.github.kassak.indexer.utils.ThreadService;
-import com.github.kassak.indexer.utils.Uninterruptible;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.TestOnly;
 
 import java.io.IOException;
 import java.nio.file.*;
-import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;

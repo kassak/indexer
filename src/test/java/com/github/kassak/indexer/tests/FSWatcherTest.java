@@ -1,6 +1,5 @@
 package com.github.kassak.indexer.tests;
 
-import com.github.kassak.indexer.fs.FSEventsService;
 import com.github.kassak.indexer.fs.FSWatcherService;
 import com.github.kassak.indexer.fs.IFSEventsProcessor;
 import com.github.kassak.indexer.tests.util.IndexerTesting;
