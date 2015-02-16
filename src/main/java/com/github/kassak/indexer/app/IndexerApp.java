@@ -13,10 +13,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.concurrent.Future;
-import java.util.logging.ConsoleHandler;
-import java.util.logging.Handler;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.logging.*;
 import java.util.*;
 import java.lang.reflect.Constructor;
 
@@ -32,8 +29,10 @@ public class IndexerApp {
             parserQueueSize = Integer.parseInt(prop.getProperty("parserQueueSize", "10"));
             registrationQueueSize = Integer.parseInt(prop.getProperty("registrationQueueSize", "10"));
             internalQueueSize = Integer.parseInt(prop.getProperty("internalQueueSize", "100"));
+            logFile = prop.getProperty("logFile", null);
         }
-        
+
+        public final String logFile;
         public final String tokenizerFactoryClass;
         public final int parserThreadsNum;
         public final int parserQueueSize;
@@ -195,6 +194,17 @@ public class IndexerApp {
             Logger topLogger = Logger.getLogger("");
             topLogger.setLevel(Level.FINEST);
             topLogger.addHandler(handler);
+
+            if(c.logFile != null) {
+                try {
+                    Handler fh = new FileHandler(c.logFile);
+                    fh.setLevel(Level.FINER);
+                    topLogger.addHandler(fh);
+                } catch (IOException e) {
+                    System.out.println("Log file creation failed:");
+                    e.printStackTrace();
+                }
+            }
         }
 
         System.out.println("Current configuration:");
