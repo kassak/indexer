@@ -2,6 +2,7 @@ package com.github.kassak.indexer;
 
 import com.github.kassak.indexer.storage.FileEntry;
 import com.github.kassak.indexer.storage.FileStatistics;
+import com.github.kassak.indexer.storage.IndexStatistics;
 import com.github.kassak.indexer.utils.IService;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.TestOnly;
@@ -19,4 +20,8 @@ public interface IIndexManagerService extends IService {
     public List<FileStatistics> getFiles() ;
     @TestOnly
     public boolean isIdle();
+    @NotNull
+    public IndexStatistics getStats();
+    @NotNull
+    public List<String> getWords();
 }

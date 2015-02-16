@@ -3,6 +3,7 @@ package com.github.kassak.indexer.app;
 import com.github.kassak.indexer.Indexer;
 import com.github.kassak.indexer.storage.FileEntry;
 import com.github.kassak.indexer.storage.FileStatistics;
+import com.github.kassak.indexer.storage.IndexStatistics;
 import com.github.kassak.indexer.storage.States;
 import com.github.kassak.indexer.tokenizing.factories.AlphanumTokenizerFactory;
 import com.github.kassak.indexer.tokenizing.factories.ITokenizerFactory;
@@ -50,6 +51,8 @@ public class IndexerApp {
         System.out.println("f\t--\tfiles");
         System.out.println("l\t--\ttoggle console logging");
         System.out.println("c\t--\tcancel last {,un}registration if it running");
+        System.out.println("i\t--\tprint index stats");
+        System.out.println("w\t--\twords");
         System.out.println("q\t--\tquit");
     }
 
@@ -106,6 +109,8 @@ public class IndexerApp {
         } else if(handler.getLevel() == Level.WARNING) {
             handler.setLevel(Level.FINE);
         } else if(handler.getLevel() == Level.FINE) {
+            handler.setLevel(Level.FINER);
+        } else if(handler.getLevel() == Level.FINER) {
             handler.setLevel(Level.ALL);
         } else if(handler.getLevel() == Level.SEVERE) {
             handler.setLevel(Level.WARNING);
@@ -147,6 +152,23 @@ public class IndexerApp {
         System.out.println("---------end----------");
         System.out.println("Files: " + res.size() + ", non empty: " + ne_cnt
                            + ", valid: " + val_cnt + ", processing: " + proc_cnt + ", invalid: " + inval_cnt);
+    }
+
+    private static void listWords(Indexer indexer) {
+        List<String> res = indexer.getWords();
+        Collections.sort(res);
+        System.out.println("--------begin---------");
+        for(String s : res) {
+            System.out.println(s);
+        }
+        System.out.println("---------end----------");
+        System.out.println("Words: " + res.size());
+    }
+
+    private static void listStats(Indexer indexer) {
+        IndexStatistics s = indexer.getStats();
+        System.out.println("Files: " + s.numFiles + ", Valid files: "
+                + s.numValidFiles + ", Words: " + s.numWords);
     }
 
     public static void main(String[] argv) {
@@ -206,6 +228,10 @@ public class IndexerApp {
                     toggleLog(handler);
                 } else if(cmd.equals("c")) {
                     cancel();
+                } else if(cmd.equals("i")) {
+                    listStats(indexer);
+                } else if(cmd.equals("w")) {
+                    listWords(indexer);
                 } else if(cmd.equals("q")) {
                     break;
                 } else {

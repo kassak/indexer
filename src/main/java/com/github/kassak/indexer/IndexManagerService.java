@@ -4,6 +4,7 @@ import com.github.kassak.indexer.fs.IFSEventsProcessor;
 import com.github.kassak.indexer.storage.FileEntry;
 import com.github.kassak.indexer.storage.IIndexProcessor;
 import com.github.kassak.indexer.storage.FileStatistics;
+import com.github.kassak.indexer.storage.IndexStatistics;
 import com.github.kassak.indexer.storage.factories.IIndexProcessorFactory;
 import com.github.kassak.indexer.tokenizing.IFileProcessingResults;
 import com.github.kassak.indexer.tokenizing.IFilesProcessor;
@@ -174,6 +175,18 @@ public class IndexManagerService implements Runnable, IIndexManagerService
     @Override
     public List<FileStatistics> getFiles() {
         return indexProcessor.getFiles();
+    }
+
+    @NotNull
+    @Override
+    public IndexStatistics getStats() {
+        return indexProcessor.getStats();
+    }
+
+    @NotNull
+    @Override
+    public List<String> getWords() {
+        return indexProcessor.getWords();
     }
 
     @Override

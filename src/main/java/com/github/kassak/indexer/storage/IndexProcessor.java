@@ -125,6 +125,17 @@ public class IndexProcessor implements IIndexProcessor {
         index.addWord(file, word);
     }
 
+    @NotNull
+    @Override
+    public IndexStatistics getStats() {
+        return index.getStats();
+    }
+
+    @NotNull
+    @Override
+    public List<String> getWords() {
+        return index.getWords();
+    }
 
     @Override
     @NotNull

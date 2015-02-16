@@ -81,4 +81,18 @@ public interface IIndexProcessor {
     */
     @NotNull
     Collection<FileEntry> search(@NotNull String word);
+
+    /**
+     * Get index statistics
+     * @return index statistics
+     */
+    @NotNull
+    public IndexStatistics getStats();
+
+    /**
+     * Returns list of words in index
+     * @return list of words
+     */
+    @NotNull
+    public List<String> getWords();
 }

@@ -86,6 +86,25 @@ class IndexStorage {
         return res;
     }
 
+    @NotNull
+    public IndexStatistics getStats() {
+        IndexStatistics res = new IndexStatistics();
+        res.numFiles = 0;
+        res.numValidFiles = 0;
+        for(IndexedFileWrapper f : files.values()) {
+            ++res.numFiles;
+            if(f.wrapped.state == States.VALID)
+                ++res.numValidFiles;
+        }
+        res.numWords = words.size();
+        return res;
+    }
+
+    @NotNull
+    public List<String> getWords() {
+        return new ArrayList<>(words.keySet());
+    }
+
     public void removeFile(@NotNull Path file) {
         if(log.isLoggable(Level.FINER))
             log.finer("Removing file " + file);
