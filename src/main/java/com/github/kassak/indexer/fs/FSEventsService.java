@@ -20,10 +20,10 @@ import static java.nio.file.StandardWatchEventKinds.*;
 */
 public class FSEventsService implements Runnable, IService {
     public static interface IRawFSEventsProcessor {
-        public void processOverflow(@NotNull Path path);
-        public void processNewEntry(@NotNull Path path);
-        public void processDeleteEntry(@NotNull Path path);
-        public void processModifyEntry(@NotNull Path path);
+        public void processOverflow(@NotNull Path path) throws InterruptedException;
+        public void processNewEntry(@NotNull Path path) throws InterruptedException;
+        public void processDeleteEntry(@NotNull Path path) throws InterruptedException;
+        public void processModifyEntry(@NotNull Path path) throws InterruptedException;
     }
 
     /**

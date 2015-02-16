@@ -45,11 +45,11 @@ public class Indexer implements IService {
         return Services.waitServicesFinished(timeout, unit, fsWatcher, indexManager);
     }
 
-    public Future<Void> add(@NotNull String path) {
+    public Future<Void> add(@NotNull String path) throws InterruptedException {
         return fsWatcher.registerRoot(FileSystems.getDefault().getPath(path));
     }
 
-    public Future<Void> remove(@NotNull String path) {
+    public Future<Void> remove(@NotNull String path) throws InterruptedException {
         return fsWatcher.unregisterRoot(FileSystems.getDefault().getPath(path));
     }
 

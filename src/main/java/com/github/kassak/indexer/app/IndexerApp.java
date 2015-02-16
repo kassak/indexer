@@ -55,14 +55,14 @@ public class IndexerApp {
         System.out.println("q\t--\tquit");
     }
 
-    private static void append(Scanner ins, Indexer indexer) {
+    private static void append(Scanner ins, Indexer indexer) throws InterruptedException {
         System.out.print("path > ");
         System.out.flush();
         lastOp = indexer.add(ins.nextLine().trim());
         System.out.println("adding..");
     }
 
-    private static void remove(Scanner ins, Indexer indexer) {
+    private static void remove(Scanner ins, Indexer indexer) throws InterruptedException {
         System.out.print("path > ");
         System.out.flush();
         lastOp = indexer.remove(ins.nextLine().trim());

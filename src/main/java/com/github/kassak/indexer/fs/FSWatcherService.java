@@ -29,7 +29,9 @@ public class FSWatcherService implements Runnable, IService, FSEventsService.IRa
     public FSWatcherService(@NotNull IFSEventsProcessor processor, int queueSize) {
         eventsProcessor = processor;
         currentService = new ThreadService(this);
-        queue = new ArrayBlockingQueue<>(queueSize);
+        queue = new ArrayBlockingQueue<>(queueSize*2);
+        fsSemaphore = new Semaphore(queueSize);
+        userSemaphore = new Semaphore(queueSize);
         eventsService = new FSEventsService(this);
     }
 
@@ -73,31 +75,41 @@ public class FSWatcherService implements Runnable, IService, FSEventsService.IRa
         }
     }
 
-    public Future<Void> registerRoot(@NotNull final Path path) {
+    public Future<Void> registerRoot(@NotNull final Path path) throws InterruptedException {
         if(log.isLoggable(Level.FINER))
             log.finer("Registering " + path);
+        userSemaphore.acquire();
         FutureTask <Void> res = new FutureTask<>(new Callable<Void>() {
             @Override
             public Void call() throws Exception {
-                registerRootImpl(path, false);
+                try {
+                    registerRootImpl(path, false);
+                } finally {
+                    userSemaphore.release();
+                }
                 return null;
             }
         });
-        queue.add(res);
+        queue.put(res);
         return res;
     }
 
-    public Future<Void> unregisterRoot(@NotNull final Path path) {
+    public Future<Void> unregisterRoot(@NotNull final Path path) throws InterruptedException {
         if(log.isLoggable(Level.FINER))
             log.finer("Unregistering " + path);
+        userSemaphore.acquire();
         FutureTask <Void> res = new FutureTask<>(new Callable<Void>() {
             @Override
             public Void call() throws Exception {
-                unregisterRootImpl(path);
+                try {
+                    unregisterRootImpl(path);
+                } finally {
+                    userSemaphore.release();
+                }
                 return null;
             }
         });
-        queue.add(res);
+        queue.put(res);
         return res;
     }
 
@@ -205,7 +217,7 @@ public class FSWatcherService implements Runnable, IService, FSEventsService.IRa
             if(!finished) {
                 log.fine("Registration not finished. Recovering " + path);
                 boolean interrupted = Thread.currentThread().isInterrupted();
-                unregisterRoot(path);
+                unregisterRootImpl(path);
                 eventsService.setBlacklisted(path, wasBlacklisted);
                 if(interrupted)
                     Thread.currentThread().interrupt();
@@ -364,59 +376,79 @@ public class FSWatcherService implements Runnable, IService, FSEventsService.IRa
     }
 
     @Override
-    public void processOverflow(final @NotNull Path path) {
+    public void processOverflow(final @NotNull Path path) throws InterruptedException {
         if(log.isLoggable(Level.FINER))
             log.finer("processOverflow " + path);
+        fsSemaphore.acquire();
         FutureTask <Void> res = new FutureTask<>(new Callable<Void>() {
             @Override
             public Void call() throws Exception {
-                processOverflowImpl(path);
+                try {
+                    processOverflowImpl(path);
+                } finally {
+                    fsSemaphore.release();
+                }
                 return null;
             }
         });
-        queue.add(res);
+        queue.put(res);
     }
 
     @Override
-    public void processNewEntry(final @NotNull Path path) {
+    public void processNewEntry(final @NotNull Path path) throws InterruptedException {
         if(log.isLoggable(Level.FINER))
             log.finer("processNewEntry " + path);
+        fsSemaphore.acquire();
         FutureTask <Void> res = new FutureTask<>(new Callable<Void>() {
             @Override
             public Void call() throws Exception {
-                processNewEntryImpl(path);
+                try {
+                    processNewEntryImpl(path);
+                } finally {
+                    fsSemaphore.release();
+                }
                 return null;
             }
         });
-        queue.add(res);
+        queue.put(res);
     }
 
     @Override
-    public void processDeleteEntry(final @NotNull Path path) {
+    public void processDeleteEntry(final @NotNull Path path) throws InterruptedException {
         if(log.isLoggable(Level.FINER))
             log.finer("processDeleteEntry " + path);
+        fsSemaphore.acquire();
         FutureTask <Void> res = new FutureTask<>(new Callable<Void>() {
             @Override
             public Void call() throws Exception {
-                processDeleteEntryImpl(path);
+                try {
+                    processDeleteEntryImpl(path);
+                } finally {
+                    fsSemaphore.release();
+                }
                 return null;
             }
         });
-        queue.add(res);
+        queue.put(res);
     }
 
     @Override
-    public void processModifyEntry(final @NotNull Path path) {
+    public void processModifyEntry(final @NotNull Path path) throws InterruptedException {
         if(log.isLoggable(Level.FINER))
             log.finer("processModifyEntry " + path);
+        fsSemaphore.acquire();
         FutureTask <Void> res = new FutureTask<>(new Callable<Void>() {
             @Override
             public Void call() throws Exception {
-                processModifyEntryImpl(path);
+                try {
+                    processModifyEntryImpl(path);
+                } finally {
+                    fsSemaphore.release();
+                }
                 return null;
             }
         });
-        queue.add(res);
+        queue.put(res);
     }
 
     @TestOnly
@@ -433,6 +465,8 @@ public class FSWatcherService implements Runnable, IService, FSEventsService.IRa
         lastActivity = System.currentTimeMillis();
     }
 
+    private final Semaphore userSemaphore;
+    private final Semaphore fsSemaphore;
     private final BlockingQueue<FutureTask<Void>> queue;
     private final FSEventsService eventsService;
     private final IFSEventsProcessor eventsProcessor;
