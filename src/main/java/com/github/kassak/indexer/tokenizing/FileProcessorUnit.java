@@ -38,6 +38,8 @@ class FileProcessorUnit implements Runnable {
                     String word = tok.next();
                     submitWord(word);
                 }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
             } catch (Exception e) {
                 log.log(Level.WARNING, "Failed to close " + file, e);
             }
