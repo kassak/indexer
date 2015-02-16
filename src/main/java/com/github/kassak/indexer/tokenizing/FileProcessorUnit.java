@@ -21,8 +21,8 @@ class FileProcessorUnit implements Runnable {
 
     @Override
     public void run() {
-        if(log.isLoggable(Level.FINE))
-            log.fine("Start processing " + file);
+        if(log.isLoggable(Level.FINER))
+            log.finer("Start processing " + file);
         boolean finished = false;
         final long stamp = System.currentTimeMillis();
         try {
@@ -47,14 +47,14 @@ class FileProcessorUnit implements Runnable {
             try {
                 submitFinished(stamp, finished);
             } catch (InterruptedException e) {
-                log.warning("Interrupted while submitting result " + file);
+                log.fine("Interrupted while submitting result " + file);
             }
         }
     }
 
     private void submitFinished(long stamp, boolean finished) throws InterruptedException {
-        if(log.isLoggable(Level.FINE))
-            log.fine("Processing finished " + file + " with " + finished);
+        if(log.isLoggable(Level.FINER))
+            log.finer("Processing finished " + file + " with " + finished);
         indexManager.submitFinishedProcessing(file, stamp, finished);
     }
 

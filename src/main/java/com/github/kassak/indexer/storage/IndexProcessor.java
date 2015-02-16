@@ -25,14 +25,14 @@ public class IndexProcessor implements IIndexProcessor {
     }
     @Override
     public void syncFile(long stamp, @NotNull Path file) {
-        if(log.isLoggable(Level.FINE))
-            log.fine("Syncing file " + file);
+        if(log.isLoggable(Level.FINER))
+            log.finer("Syncing file " + file);
         IndexedFile f = index.getOrAddFile(file, stamp);
         assert(f.stamp <= stamp); //this is guaranteed
         f.stamp = stamp;
         if(f.state == States.PROCESSING) {//already processing
-            if(log.isLoggable(Level.FINE))
-                log.fine("Already processing " + file);
+            if(log.isLoggable(Level.FINER))
+                log.finer("Already processing " + file);
             return;
         }
         f.state = States.PROCESSING;
@@ -42,8 +42,8 @@ public class IndexProcessor implements IIndexProcessor {
 
     @Override
     public void syncDirectory(final long stamp, @NotNull Path file) {
-        if(log.isLoggable(Level.FINE))
-            log.fine("Syncing directory " + file);
+        if(log.isLoggable(Level.FINER))
+            log.finer("Syncing directory " + file);
         try {
             Files.walkFileTree(file, new SimpleFileVisitor<Path>() {
                 @Override
@@ -85,25 +85,25 @@ public class IndexProcessor implements IIndexProcessor {
     }
 
     private void processFile(Path file) {
-        if(log.isLoggable(Level.FINE))
-            log.fine("Processing file " + file);
+        if(log.isLoggable(Level.FINER))
+            log.finer("Processing file " + file);
         indexManager.processFile(file);
     }
 
     @Override
     public void fileFinished(long stamp, @NotNull Path file, boolean b) {
         String sfile = file.toString();
-        if(log.isLoggable(Level.FINE))
-            log.fine("File finished " + sfile + " with result " + b);
+        if(log.isLoggable(Level.FINER))
+            log.finer("File finished " + sfile + " with result " + b);
         IndexedFile f = index.getFile(file);
         if(f == null) { //file removed
-            log.warning("Finished processing removed file " + sfile);
+            log.finer("Finished processing removed file " + sfile);
             return;
         }
         assert(f.state == States.PROCESSING && f.processingStamp <= stamp); //NOTE: how couldn't it be?
         if(f.stamp > stamp) { //modified while processing
-            if(log.isLoggable(Level.FINE))
-                log.fine("File was modified while processing. Doing it again " + sfile);
+            if(log.isLoggable(Level.FINER))
+                log.finer("File was modified while processing. Doing it again " + sfile);
             f.processingStamp = f.stamp;
             f.state = States.PROCESSING;
             processFile(file);

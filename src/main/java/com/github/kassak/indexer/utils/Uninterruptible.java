@@ -22,7 +22,7 @@ public class Uninterruptible {
                 break;
             }
             catch (InterruptedException e) {
-                log.warning("Interrupted on uninterruptible op. Retry");
+                log.fine("Interrupted on uninterruptible op. Retry");
                 wasInterrupted = true;
             }
             if(i >= maxTries) {

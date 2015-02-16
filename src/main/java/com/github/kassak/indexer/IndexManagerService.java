@@ -84,7 +84,7 @@ public class IndexManagerService implements Runnable, IIndexManagerService
     @Override
     public void addWordToIndex(@NotNull Path file, @NotNull String word) throws InterruptedException {
         if(!acquireSemaphoreAndRunning(wordsSemaphore)) {
-            log.warning("Word received while not running. Annihilating");
+            log.fine("Word received while not running. Annihilating");
             return;
         }
         tasks.put(new IndexManagerTask(IndexManagerTask.ADD_WORD, file, word));
@@ -94,7 +94,7 @@ public class IndexManagerService implements Runnable, IIndexManagerService
     @Override
     public void removeFromIndex(@NotNull Path file) throws InterruptedException {
         if(!acquireSemaphoreAndRunning(wordsSemaphore)) {
-            log.warning("Remove file while not running. Annihilating");
+            log.fine("Remove file while not running. Annihilating");
             return;
         }
         tasks.put(new IndexManagerTask(IndexManagerTask.REMOVE_WORDS, file, null));
@@ -121,7 +121,7 @@ public class IndexManagerService implements Runnable, IIndexManagerService
     @Override
     public void submitFinishedProcessing(@NotNull Path file, long stamp, boolean valid) throws InterruptedException {
         if(!isRunning()) {
-            log.warning("Received result while not running. Sending it to black hole");
+            log.fine("Received result while not running. Sending it to black hole");
             return;
         }
         tasks.put(new IndexManagerTask(valid ? IndexManagerTask.FILE_FINISHED_OK : IndexManagerTask.FILE_FINISHED_FAIL, file, stamp, null));
@@ -137,7 +137,7 @@ public class IndexManagerService implements Runnable, IIndexManagerService
     @Override
     public void onFileChanged(@NotNull Path file) throws InterruptedException {
         if(!acquireSemaphoreAndRunning(tasksSemaphore)) {
-            log.warning("Change received while not running. Annihilating");
+            log.fine("Change received while not running. Annihilating");
             return;
         }
         tasks.put(new IndexManagerTask(IndexManagerTask.SYNC_FILE, file, null));
@@ -146,7 +146,7 @@ public class IndexManagerService implements Runnable, IIndexManagerService
     @Override
     public void onDirectoryChanged(@NotNull Path file) throws InterruptedException {
         if(!acquireSemaphoreAndRunning(tasksSemaphore)) {
-            log.warning("Change received while not running. Annihilating");
+            log.fine("Change received while not running. Annihilating");
             return;
         }
         tasks.put(new IndexManagerTask(IndexManagerTask.SYNC_DIR, file, null));
@@ -155,7 +155,7 @@ public class IndexManagerService implements Runnable, IIndexManagerService
     @Override
     public void onFileRemoved(@NotNull Path file) throws InterruptedException {
         if(!acquireSemaphoreAndRunning(tasksSemaphore)) {
-            log.warning("Remove received while not running. Annihilating");
+            log.fine("Remove received while not running. Annihilating");
             return;
         }
         tasks.put(new IndexManagerTask(IndexManagerTask.DEL_FILE, file, null));
@@ -164,7 +164,7 @@ public class IndexManagerService implements Runnable, IIndexManagerService
     @Override
     public void onDirectoryRemoved(@NotNull Path file) throws InterruptedException {
         if(!acquireSemaphoreAndRunning(tasksSemaphore)) {
-            log.warning("Remove received while not running. Annihilating");
+            log.fine("Remove received while not running. Annihilating");
             return;
         }
         tasks.put(new IndexManagerTask(IndexManagerTask.DEL_DIR, file, null));
@@ -179,7 +179,7 @@ public class IndexManagerService implements Runnable, IIndexManagerService
     @Override
     public boolean processFile(@NotNull Path file){
         if(!isRunning()) {
-            log.warning("Received message while not running. Sending it to black hole");
+            log.fine("Received message while not running. Sending it to black hole");
             return false;
         }
         filesQueue.add(file);

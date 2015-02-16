@@ -37,8 +37,8 @@ class IndexStorage {
     public void addWord(@NotNull Path file, @NotNull String word) {
         IndexedFileWrapper ifile = files.get(file.toString());
         if(ifile == null) {
-            if(log.isLoggable(Level.FINE))
-                log.fine("Ignoring attempt to add word to removed file " + file);
+            if(log.isLoggable(Level.FINER))
+                log.finer("Ignoring attempt to add word to removed file " + file);
             return;
         }
         IndexedWordWrapper iword = words.get(word);
@@ -87,16 +87,16 @@ class IndexStorage {
     }
 
     public void removeFile(@NotNull Path file) {
-        if(log.isLoggable(Level.FINE))
-            log.fine("Removing file " + file);
+        if(log.isLoggable(Level.FINER))
+            log.finer("Removing file " + file);
         removeWords(file);
         files.remove(file.toString());
     }
 
     public void removeDirectory(@NotNull Path file) {
         String sfile = file.toString();
-        if(log.isLoggable(Level.FINE))
-            log.fine("Removing directory " + sfile);
+        if(log.isLoggable(Level.FINER))
+            log.finer("Removing directory " + sfile);
         removeFile(file);
         sfile += FileSystems.getDefault().getSeparator();
         for(String f : files.subMap(sfile, sfile + Character.MAX_VALUE).keySet()) {
@@ -106,8 +106,8 @@ class IndexStorage {
 
     public void removeNonexistent(@NotNull Path file) {
         String sfile = file.toString();
-        if(log.isLoggable(Level.FINE))
-            log.fine("Removing nonexistent " + sfile);
+        if(log.isLoggable(Level.FINER))
+            log.finer("Removing nonexistent " + sfile);
         removeFile(file);
         sfile += FileSystems.getDefault().getSeparator();
         for(String f : files.subMap(sfile, sfile + Character.MAX_VALUE).keySet()) {
@@ -120,8 +120,8 @@ class IndexStorage {
     public void removeWords(@NotNull Path file) {
         IndexedFileWrapper ifile = files.get(file.toString());
         if(ifile == null) {
-            if(log.isLoggable(Level.FINE))
-                log.fine("Ignoring attempt to remove word from removed file " + file);
+            if(log.isLoggable(Level.FINER))
+                log.finer("Ignoring attempt to remove word from removed file " + file);
             return;
         }
         Iterator<IndexedWordWrapper> it = ifile.words.iterator();

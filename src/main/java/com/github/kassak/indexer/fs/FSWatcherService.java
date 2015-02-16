@@ -198,13 +198,13 @@ public class FSWatcherService implements Runnable, IService, FSEventsService.IRa
                     }
                 }
             } else {
-                log.log(auto ? Level.FINER : Level.WARNING, "Attempt to register not file nor directory " + path);
+                log.log(auto ? Level.FINER : Level.FINE, "Attempt to register not file nor directory " + path);
                 eventsService.setBlacklisted(path, false);
                 finished = true;
             }
         } finally {
             if(!finished) {
-                log.warning("Registration not finished. Recovering " + path);
+                log.fine("Registration not finished. Recovering " + path);
                 boolean interrupted = Thread.currentThread().isInterrupted();
                 unregisterRoot(path);
                 eventsService.setBlacklisted(path, wasBlacklisted);
@@ -220,7 +220,7 @@ public class FSWatcherService implements Runnable, IService, FSEventsService.IRa
         eventsService.setBlacklisted(path, true);
         if (Files.isDirectory(path)) {
             if(!eventsService.isRegistered(path)) {
-                log.warning("Already unregistered " + path);
+                log.fine("Already unregistered " + path);
                 return;
             }
             try {
