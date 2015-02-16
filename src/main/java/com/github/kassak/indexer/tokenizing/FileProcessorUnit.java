@@ -41,7 +41,7 @@ class FileProcessorUnit implements Runnable {
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             } catch (Exception e) {
-                log.log(Level.WARNING, "Failed to close " + file, e);
+                log.log(Level.FINE, "Failed to process " + file, e);
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
