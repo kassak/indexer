@@ -5,7 +5,9 @@ import org.jetbrains.annotations.NotNull;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.nio.file.Path;
+import java.util.InputMismatchException;
 import java.util.Scanner;
+import java.util.logging.Logger;
 
 /**
     Tokenizer which splits by specified separator
@@ -24,7 +26,13 @@ public class SeparatorTokenizer implements ITokenizer {
     private void advance() {
         do {
             if(scanner.hasNext()) {
-                nextToken = scanner.next();
+                try {
+                    nextToken = scanner.next();
+                } catch (InputMismatchException e) {
+                    log.fine("Seems like it was binary file. Stopping.");
+                    nextToken = null;
+                    break;
+                }
             }
             else {
                 nextToken = null;
@@ -56,4 +64,5 @@ public class SeparatorTokenizer implements ITokenizer {
 
     private final Scanner scanner;
     private String nextToken;
+    private final static Logger log = Logger.getLogger(SeparatorTokenizer.class.getName());
 }
