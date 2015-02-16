@@ -16,7 +16,7 @@ import java.util.logging.Logger;
 import static java.nio.file.StandardWatchEventKinds.*;
 
 /**
-    Filesystem watcher. Producer of events. Big.
+    Filesystem watcher. Producer of events.
 */
 public class FSEventsService implements Runnable, IService {
     public static interface IRawFSEventsProcessor {

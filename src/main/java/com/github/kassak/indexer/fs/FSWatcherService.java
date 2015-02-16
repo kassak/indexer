@@ -17,8 +17,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
-    Service which performs registration of root to events service in
-    separate thread.
+    Service which processes events from FSEventsService.
 */
 public class FSWatcherService implements Runnable, IService, FSEventsService.IRawFSEventsProcessor {
     /**
