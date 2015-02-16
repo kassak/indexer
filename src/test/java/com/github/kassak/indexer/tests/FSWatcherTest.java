@@ -329,7 +329,42 @@ public class FSWatcherTest {
         IndexerTesting.waitIdle(watcher);
         watcher.unregisterRoot(superRoot);
 
+        IndexerTesting.waitIdle(watcher);
         Assert.assertEquals(c.files.size(), 1);
+        Assert.assertTrue(c.dirs.isEmpty());
+    }
+
+    @Test
+    public void subdirUnregistration() throws IOException, InterruptedException {
+        Path superRoot = tempDir();
+        Path root = addDir(superRoot, "blah");
+
+        IndexerTesting.waitIdle(watcher);
+        watcher.unregisterRoot(root);
+
+        IndexerTesting.waitIdle(watcher);
+        Path file = addFile(root, "blah.txt");
+
+        IndexerTesting.waitIdle(watcher);
+        Assert.assertTrue(c.files.isEmpty());
+        Assert.assertTrue(c.dirs.isEmpty());
+    }
+
+    @Test
+    public void subdirPreUnregistration() throws IOException, InterruptedException {
+        Path superRoot = tempDir();
+        Path root = addDir(superRoot, "blah");
+        Files.delete(root);
+
+        IndexerTesting.waitIdle(watcher);
+        watcher.registerRoot(superRoot);
+
+        IndexerTesting.waitIdle(watcher);
+        newDir(root);
+        Path file = addFile(root, "blah.txt");
+
+        IndexerTesting.waitIdle(watcher);
+        Assert.assertTrue(c.files.isEmpty());
         Assert.assertTrue(c.dirs.isEmpty());
     }
 
