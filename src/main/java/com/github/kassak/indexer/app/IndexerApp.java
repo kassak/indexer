@@ -199,6 +199,7 @@ public class IndexerApp {
                 try {
                     Handler fh = new FileHandler(c.logFile);
                     fh.setLevel(Level.FINER);
+                    fh.setFormatter(new SimpleFormatter());
                     topLogger.addHandler(fh);
                 } catch (IOException e) {
                     System.out.println("Log file creation failed:");
